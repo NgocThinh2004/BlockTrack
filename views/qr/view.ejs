@@ -1,0 +1,68 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="mb-0">Mã QR truy xuất sản phẩm</h3>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-6 text-center mb-4 mb-md-0">
+              <% if (qrCode && qrCode.qrImageUrl) { %>
+                <img src="<%= qrCode.qrImageUrl %>" alt="QR Code" class="img-fluid" style="max-width: 250px;">
+              <% } else { %>
+                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 250px; height: 250px; margin: 0 auto;">
+                  <i class="fas fa-qrcode fa-5x text-muted"></i>
+                </div>
+              <% } %>
+              <p class="mt-3 text-muted">
+                <i class="fas fa-eye me-1"></i>
+                Đã quét: <%= qrCode ? qrCode.scans || 0 : 0 %> lần
+              </p>
+            </div>
+            
+            <div class="col-md-6">
+              <h4><%= product.name %></h4>
+              <p class="text-muted">Được sản xuất bởi <%= product.manufacturer %></p>
+              
+              <table class="table table-sm">
+                <tbody>
+                  <tr>
+                    <td>Mã sản phẩm</td>
+                    <td><strong><%= product.id %></strong></td>
+                  </tr>
+                  <tr>
+                    <td>Ngày tạo QR</td>
+                    <td><%= qrCode && qrCode.createdAt ? new Date(qrCode.createdAt).toLocaleDateString() : 'N/A' %></td>
+                  </tr>
+                  <tr>
+                    <td>Trạng thái</td>
+                    <td>
+                      <span class="badge bg-success">Hoạt động</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <div class="alert alert-info small">
+                <p class="mb-0">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Mã QR này dẫn đến trang truy xuất thông tin chi tiết về sản phẩm. Khách hàng có thể quét mã này để kiểm tra tính xác thực và nguồn gốc.
+                </p>
+              </div>
+              
+              <div class="d-grid gap-2">
+                <a href="/products/<%= product.id %>" class="btn btn-outline-primary">
+                  <i class="fas fa-box me-1"></i> Xem thông tin sản phẩm
+                </a>
+                <a href="<%= qrCode ? qrCode.qrImageUrl : '#' %>" download="qrcode-<%= product.id %>.png" class="btn btn-outline-success <%= !qrCode ? 'disabled' : '' %>">
+                  <i class="fas fa-download me-1"></i> Tải mã QR
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,151 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/products">Sản phẩm</a></li>
+      <li class="breadcrumb-item"><a href="/products/<%= product.id %>"><%= product.name %></a></li>
+      <li class="breadcrumb-item active">Lịch sử giai đoạn</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-3 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Thông tin sản phẩm</h5>
+        </div>
+        <div class="card-body">
+          <h6 class="card-subtitle mb-3 fw-bold"><%= product.name %></h6>
+          <p><strong>Nhà sản xuất:</strong> <%= product.manufacturer %></p>
+          <p><strong>Xuất xứ:</strong> <%= product.origin %></p>
+          <p class="mb-0"><strong>Blockchain ID:</strong> <br>
+            <small><%= product.blockchainId || 'Đang xử lý' %></small>
+          </p>
+        </div>
+        <div class="card-footer bg-white">
+          <p class="mb-0"><strong>Giai đoạn hiện tại:</strong> 
+            <span class="badge bg-<%= 
+              product.currentStage === 'production' ? 'primary' : 
+              product.currentStage === 'packaging' ? 'info' : 
+              product.currentStage === 'distribution' ? 'warning' : 
+              product.currentStage === 'retail' ? 'success' : 
+              product.currentStage === 'sold' ? 'secondary' : 'dark' 
+            %>">
+              <%= product.currentStage %>
+            </span>
+          </p>
+        </div>
+      </div>
+      
+      <% if (locals.user && locals.user.id === product.ownerId) { %>
+        <div class="d-grid gap-2 mt-3">
+          <a href="/stages/product/<%= product.id %>/add" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Thêm giai đoạn mới
+          </a>
+          <a href="/products/<%= product.id %>" class="btn btn-outline-secondary">
+            <i class="fas fa-box me-1"></i> Xem sản phẩm
+          </a>
+        </div>
+      <% } %>
+    </div>
+    
+    <div class="col-md-9">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h4 class="mb-0">Lịch sử giai đoạn</h4>
+        </div>
+        <div class="card-body">
+          <% if (stages && stages.length > 0) { %>
+            <div class="timeline">
+              <% stages.forEach(stage => { %>
+                <div class="timeline-item">
+                  <div class="timeline-marker <%= 
+                    stage.stageName === 'production' ? 'bg-primary' : 
+                    stage.stageName === 'packaging' ? 'bg-info' : 
+                    stage.stageName === 'distribution' ? 'bg-warning' : 
+                    stage.stageName === 'retail' ? 'bg-success' : 
+                    stage.stageName === 'sold' ? 'bg-secondary' : 'bg-dark' 
+                  %>"></div>
+                  <div class="timeline-content">
+                    <div class="d-flex justify-content-between mb-2">
+                      <h5 class="timeline-title mb-0">
+                        <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
+                      </h5>
+                      <span class="text-muted fs-6">
+                        <%= new Date(stage.timestamp).toLocaleString() %>
+                      </span>
+                    </div>
+                    <p><%= stage.description %></p>
+                    <div class="d-flex">
+                      <span class="badge bg-light text-dark me-2">
+                        <i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %>
+                      </span>
+                      <span class="badge bg-light text-dark">
+                        <i class="fas fa-user me-1"></i> <%= stage.handledBy || 'System' %>
+                      </span>
+                    </div>
+                    <% if (stage.blockchainTxId) { %>
+                      <div class="mt-2">
+                        <small class="text-muted">Transaction ID: <%= stage.blockchainTxId.substring(0, 16) %>...</small>
+                      </div>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="alert alert-info">
+              <p class="mb-0">Không có dữ liệu lịch sử cho sản phẩm này.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 40px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 19px;
+  height: 100%;
+  width: 2px;
+  background: #e9ecef;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 6px;
+  left: -40px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-content {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 5px;
+}
+
+.timeline-title {
+  margin-top: 0;
+}
+</style>

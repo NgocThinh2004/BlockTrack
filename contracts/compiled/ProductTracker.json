@@ -1,0 +1,342 @@
+{
+  "contractName": "ProductTracker",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "manufacturer",
+          "type": "address"
+        }
+      ],
+      "name": "ProductAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "stageName",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "StageAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_origin",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_manufacturer",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_productionDate",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_batchNumber",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_ownerId",
+          "type": "string"
+        }
+      ],
+      "name": "addProduct",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_stageName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_description",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_location",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_handler",
+          "type": "string"
+        }
+      ],
+      "name": "addProductStage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_origin",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_manufacturer",
+          "type": "string"
+        }
+      ],
+      "name": "updateProduct",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_newOwnerId",
+          "type": "string"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        }
+      ],
+      "name": "getProduct",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "origin",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "manufacturer",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "productionDate",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "batchNumber",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "ownerId",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "exists",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ProductTracker.Product",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        }
+      ],
+      "name": "getProductHistoryCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_productId",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getProductHistoryItem",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "stageName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "description",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "location",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "handler",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct ProductTracker.Stage",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b50610c8a806100206000396000f3006080...",
+  "deployedBytecode": "0x6080604052600436106100705760003560e01c8063...",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract ProductTracker {\n    // Cấu trúc dữ liệu sản phẩm\n    struct Product {\n        string name;\n        string origin;\n        string manufacturer;\n        uint256 productionDate;\n        string batchNumber;\n        string ownerId;\n        bool exists;\n    }\n    \n    // Cấu trúc dữ liệu giai đoạn\n    struct Stage {\n        string stageName;\n        string description;\n        string location;\n        uint256 timestamp;\n        string handler;\n    }\n    \n    // Lưu trữ sản phẩm theo ID\n    mapping(string => Product) private products;\n    \n    // Lưu trữ lịch sử sản phẩm\n    mapping(string => Stage[]) private productHistory;\n    \n    // Events\n    event ProductAdded(string indexed productId, string name, address manufacturer);\n    event StageAdded(string indexed productId, string stageName, uint256 timestamp);\n    event OwnershipTransferred(string indexed productId, address previousOwner, address newOwner);\n    \n    constructor() {}\n    \n    // Thêm sản phẩm mới\n    function addProduct(\n        string memory _name,\n        string memory _origin,\n        string memory _manufacturer,\n        uint256 _productionDate,\n        string memory _batchNumber,\n        string memory _ownerId\n    ) public returns (string memory) {\n        // Tạo ID cho sản phẩm\n        string memory productId = generateProductId(_name, _manufacturer, _productionDate);\n        \n        // Kiểm tra sản phẩm đã tồn tại chưa\n        require(!products[productId].exists, \"San pham da ton tai\");\n        \n        // Lưu thông tin sản phẩm\n        products[productId] = Product({\n            name: _name,\n            origin: _origin,\n            manufacturer: _manufacturer,\n            productionDate: _productionDate,\n            batchNumber: _batchNumber,\n            ownerId: _ownerId,\n            exists: true\n        });\n        \n        // Thêm giai đoạn đầu tiên\n        Stage memory initialStage = Stage({\n            stageName: \"production\",\n            description: \"San pham vua duoc tao\",\n            location: _origin,\n            timestamp: block.timestamp,\n            handler: _ownerId\n        });\n        \n        productHistory[productId].push(initialStage);\n        \n        // Phát sự kiện\n        emit ProductAdded(productId, _name, msg.sender);\n        \n        return productId;\n    }\n    \n    // Thêm giai đoạn mới cho sản phẩm\n    function addProductStage(\n        string memory _productId,\n        string memory _stageName,\n        string memory _description,\n        string memory _location,\n        uint256 _timestamp,\n        string memory _handler\n    ) public {\n        // Kiểm tra sản phẩm tồn tại\n        require(products[_productId].exists, \"San pham khong ton tai\");\n        \n        // Tạo và lưu giai đoạn mới\n        Stage memory newStage = Stage({\n            stageName: _stageName,\n            description: _description,\n            location: _location,\n            timestamp: _timestamp,\n            handler: _handler\n        });\n        \n        productHistory[_productId].push(newStage);\n        \n        // Phát sự kiện\n        emit StageAdded(_productId, _stageName, _timestamp);\n    }\n    \n    // Cập nhật thông tin sản phẩm\n    function updateProduct(\n        string memory _productId,\n        string memory _name,\n        string memory _origin,\n        string memory _manufacturer\n    ) public {\n        // Kiểm tra sản phẩm tồn tại\n        require(products[_productId].exists, \"San pham khong ton tai\");\n        \n        // Cập nhật thông tin\n        Product storage product = products[_productId];\n        product.name = _name;\n        product.origin = _origin;\n        product.manufacturer = _manufacturer;\n    }\n    \n    // Chuyển quyền sở hữu sản phẩm\n    function transferOwnership(\n        string memory _productId,\n        string memory _newOwnerId\n    ) public {\n        // Kiểm tra sản phẩm tồn tại\n        require(products[_productId].exists, \"San pham khong ton tai\");\n        \n        // Lưu chủ sở hữu cũ\n        string memory previousOwner = products[_productId].ownerId;\n        \n        // Cập nhật chủ sở hữu mới\n        products[_productId].ownerId = _newOwnerId;\n        \n        // Phát sự kiện\n        emit OwnershipTransferred(_productId, msg.sender, msg.sender);\n    }\n    \n    // Lấy thông tin sản phẩm\n    function getProduct(string memory _productId) public view returns (Product memory) {\n        return products[_productId];\n    }\n    \n    // Lấy số lượng sự kiện trong lịch sử sản phẩm\n    function getProductHistoryCount(string memory _productId) public view returns (uint256) {\n        return productHistory[_productId].length;\n    }\n    \n    // Lấy thông tin giai đoạn theo index\n    function getProductHistoryItem(string memory _productId, uint256 index) public view returns (Stage memory) {\n        require(index < productHistory[_productId].length, \"Index vuot qua lich su\");\n        return productHistory[_productId][index];\n    }\n    \n    // Tạo ID cho sản phẩm\n    function generateProductId(\n        string memory _name,\n        string memory _manufacturer,\n        uint256 _timestamp\n    ) internal pure returns (string memory) {\n        // Giả lập hàm hash để tạo ID\n        // Trong môi trường thực tế, nên sử dụng keccak256 hoặc các thuật toán hash khác\n        return string(abi.encodePacked(_name, _manufacturer, _timestamp));\n    }\n}"
+}

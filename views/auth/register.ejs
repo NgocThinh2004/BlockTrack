@@ -1,0 +1,167 @@
+<!-- Hapus navbar hardcoded yang ada di đây -->
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h3 class="mb-0">Đăng ký tài khoản</h3>
+        </div>
+        
+        <div class="card-body p-4">
+          <% if (locals.error) { %>
+            <div class="alert alert-danger">
+              <%= error %>
+            </div>
+          <% } %>
+          
+          <form id="registerForm" action="/auth/register" method="POST">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="name" class="form-label">Họ và tên</label>
+                <input type="text" class="form-control" id="name" name="name" value="<%= locals.formData ? formData.name : '' %>" required>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="<%= locals.formData ? formData.email : '' %>" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="password" class="form-label">Mật khẩu</label>
+                <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                <small class="form-text text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="passwordConfirm" class="form-label">Xác nhận mật khẩu</label>
+                <input type="password" class="form-control" id="passwordConfirm" name="passwordConfirm" required minlength="6">
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="role" class="form-label">Vai trò</label>
+              <select class="form-select" id="role" name="role" required>
+                <option value="" selected disabled>Chọn vai trò của bạn</option>
+                <option value="consumer" <%= locals.formData && formData.role === 'consumer' ? 'selected' : '' %>>Người tiêu dùng</option>
+                <option value="producer" <%= locals.formData && formData.role === 'producer' ? 'selected' : '' %>>Nhà sản xuất</option>
+                <option value="distributor" <%= locals.formData && formData.role === 'distributor' ? 'selected' : '' %>>Nhà phân phối</option>
+                <option value="retailer" <%= locals.formData && formData.role === 'retailer' ? 'selected' : '' %>>Nhà bán lẻ</option>
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="address" class="form-label">Địa chỉ</label>
+              <textarea class="form-control" id="address" name="address" rows="2"><%= locals.formData ? formData.address : '' %></textarea>
+            </div>
+            
+            <div class="mb-4">
+              <div class="d-flex justify-content-between align-items-center">
+                <label class="form-label">Ví MetaMask <span id="walletRequired" class="text-danger" style="display: none;">*</span></label>
+                <small id="walletRequiredText" class="text-danger" style="display: none;">Bắt buộc cho vai trò đã chọn</small>
+              </div>
+              <button type="button" id="connectMetaMask" class="btn btn-outline-primary w-100">
+                <i class="fas fa-wallet me-2"></i> Kết nối ví MetaMask <span id="optionalText">(tùy chọn)</span>
+              </button>
+              <small id="walletStatus" class="form-text text-muted d-none mt-1">
+                Đã kết nối: <span id="walletAddress"></span>
+              </small>
+              <input type="hidden" id="walletAddressInput" name="walletAddress" value="<%= locals.formData ? formData.walletAddress : '' %>">
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">Đăng ký</button>
+            </div>
+            
+            <div class="text-center mt-4">
+              <p>Đã có tài khoản? <a href="/auth/login">Đăng nhập</a></p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const connectMetaMaskBtn = document.getElementById('connectMetaMask');
+    const walletStatus = document.getElementById('walletStatus');
+    const walletAddressSpan = document.getElementById('walletAddress');
+    const walletAddressInput = document.getElementById('walletAddressInput');
+    const password = document.getElementById('password');
+    const passwordConfirm = document.getElementById('passwordConfirm');
+    const registerForm = document.getElementById('registerForm');
+    const roleSelect = document.getElementById('role');
+    const walletRequired = document.getElementById('walletRequired');
+    const optionalText = document.getElementById('optionalText');
+    const walletRequiredText = document.getElementById('walletRequiredText');
+
+    // Cập nhật hiển thị yêu cầu ví dựa theo vai trò
+    function updateWalletRequirement() {
+      const selectedRole = roleSelect.value;
+      if (selectedRole && selectedRole !== 'consumer') {
+        walletRequired.style.display = 'inline';
+        optionalText.style.display = 'none';
+        walletRequiredText.style.display = 'inline';
+      } else {
+        walletRequired.style.display = 'none';
+        optionalText.style.display = 'inline';
+        walletRequiredText.style.display = 'none';
+      }
+    }
+    
+    // Kiểm tra ngay khi trang tải
+    updateWalletRequirement();
+
+    // Cập nhật khi thay đổi vai trò
+    roleSelect.addEventListener('change', updateWalletRequirement);
+
+    // Kết nối MetaMask
+    connectMetaMaskBtn.addEventListener('click', async function() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          
+          if (accounts.length > 0) {
+            const address = accounts[0];
+            walletAddressSpan.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
+            walletAddressInput.value = address;
+            walletStatus.classList.remove('d-none');
+            connectMetaMaskBtn.classList.remove('btn-outline-primary');
+            connectMetaMaskBtn.classList.add('btn-success');
+            connectMetaMaskBtn.innerHTML = '<i class="fas fa-check me-2"></i> Ví đã kết nối';
+          }
+        } catch (error) {
+          console.error('Lỗi kết nối MetaMask:', error);
+          alert('Không thể kết nối với MetaMask. Vui lòng thử lại.');
+        }
+      } else {
+        alert('Bạn cần cài đặt MetaMask để sử dụng tính năng này.');
+        window.open('https://metamask.io/download.html', '_blank');
+      }
+    });
+
+    // Kiểm tra mật khẩu trùng khớp và kết nối ví (nếu cần)
+    registerForm.addEventListener('submit', function(e) {
+      // Kiểm tra mật khẩu trùng khớp
+      if (password.value !== passwordConfirm.value) {
+        e.preventDefault();
+        alert('Mật khẩu xác nhận không khớp!');
+        return;
+      }
+      
+      // Kiểm tra yêu cầu kết nối ví
+      const selectedRole = roleSelect.value;
+      if (selectedRole && selectedRole !== 'consumer' && !walletAddressInput.value) {
+        e.preventDefault();
+        alert('Vui lòng kết nối ví MetaMask để đăng ký vai trò này!');
+        return;
+      }
+    });
+  });
+</script>

@@ -1,0 +1,160 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/products">Sản phẩm</a></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= product.name %></li>
+    </ol>
+  </nav>
+  
+  <div class="row mt-3">
+    <div class="col-md-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h3 class="mb-0"><%= product.name %></h3>
+          <span class="badge bg-<%= 
+            product.currentStage === 'production' ? 'primary' : 
+            product.currentStage === 'packaging' ? 'info' : 
+            product.currentStage === 'distribution' ? 'warning' : 
+            product.currentStage === 'retail' ? 'success' : 'secondary' 
+          %> fs-6">
+            <%= product.currentStage %>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <p><strong>Nhà sản xuất:</strong> <%= product.manufacturer %></p>
+              <p><strong>Xuất xứ:</strong> <%= product.origin %></p>
+              <p><strong>Ngày sản xuất:</strong> <%= new Date(product.productionDate).toLocaleDateString() %></p>
+              <% if (product.expiryDate) { %>
+                <p><strong>Hạn sử dụng:</strong> <%= new Date(product.expiryDate).toLocaleDateString() %></p>
+              <% } %>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Số lô:</strong> <%= product.batchNumber || 'Không có' %></p>
+              <p><strong>Blockchain ID:</strong> <%= product.blockchainId || 'Đang xử lý' %></p>
+              <p><strong>Ngày tạo:</strong> <%= new Date(product.createdAt).toLocaleString() %></p>
+            </div>
+          </div>
+          
+          <% if (product.description) { %>
+            <div class="mb-3">
+              <h5>Mô tả</h5>
+              <p><%= product.description %></p>
+            </div>
+          <% } %>
+          
+          <% if (locals.user && locals.user.id === product.ownerId) { %>
+            <div class="d-flex mt-4">
+              <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">Chỉnh sửa</a>
+              <a href="/stages/product/<%= product.id %>/add" class="btn btn-success me-2">Thêm giai đoạn</a>
+              <% if (!qrCode) { %>
+                <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2">Tạo mã QR</a>
+              <% } %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      
+      <!-- Timeline/History Section -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h4 class="mb-0">Lịch sử sản phẩm</h4>
+        </div>
+        <div class="card-body pb-0">
+          <% if (history && history.length > 0) { %>
+            <ul class="timeline">
+              <% history.forEach((item, index) => { %>
+                <li class="timeline-item mb-5">
+                  <h5 class="fw-bold"><%= item.stageName %></h5>
+                  <p class="text-muted mb-2 fw-bold">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    <%= new Date(item.timestamp).toLocaleString() %>
+                  </p>
+                  <p class="text-muted mb-0"><i class="fas fa-map-marker-alt me-1"></i> <%= item.location %></p>
+                  <p class="text-muted"><%= item.description %></p>
+                </li>
+              <% }) %>
+            </ul>
+          <% } else { %>
+            <p class="text-muted">Không có dữ liệu lịch sử</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <!-- QR Code Section -->
+      <% if (qrCode) { %>
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white">
+            <h4 class="mb-0">Mã QR truy xuất</h4>
+          </div>
+          <div class="card-body text-center">
+            <img src="<%= qrCode.qrImageUrl %>" alt="QR Code" class="img-fluid mb-3" style="max-width: 200px;">
+            <p class="mb-1">Quét mã để xem thông tin truy xuất</p>
+            <p class="text-muted small">Lượt quét: <%= qrCode.scans || 0 %></p>
+            <a href="/qr/<%= product.id %>/view" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-qrcode me-1"></i> Xem chi tiết QR
+            </a>
+          </div>
+        </div>
+      <% } %>
+      
+      <!-- Blockchain Info -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h4 class="mb-0">Thông tin Blockchain</h4>
+        </div>
+        <div class="card-body">
+          <p><strong>ID:</strong> <span class="text-monospace"><%= product.blockchainId || 'Đang xử lý' %></span></p>
+          <p class="mb-0"><strong>Trạng thái:</strong> <span class="badge bg-success">Đã xác thực</span></p>
+          
+          <hr>
+          <div class="d-grid">
+            <a href="/track/<%= product.id %>" class="btn btn-outline-primary">
+              <i class="fas fa-search me-1"></i> Xem dữ liệu truy xuất
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .timeline {
+    position: relative;
+    list-style: none;
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+  }
+
+  .timeline:before {
+    content: ' ';
+    background: #dee2e6;
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    width: 2px;
+    height: 100%;
+  }
+
+  .timeline-item {
+    position: relative;
+  }
+
+  .timeline-item:before {
+    content: ' ';
+    background: white;
+    display: inline-block;
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid #28a745;
+    left: -29px;
+    top: 3px;
+    width: 15px;
+    height: 15px;
+    z-index: 1;
+  }
+</style>

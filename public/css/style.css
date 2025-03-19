@@ -1,0 +1,301 @@
+/* Main Styles for Blockchain Product Tracking */
+
+:root {
+  --primary: #0d6efd;
+  --secondary: #6c757d;
+  --success: #198754;
+  --info: #0dcaf0;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --light: #f8f9fa;
+  --dark: #212529;
+}
+
+/* Global Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333;
+  background-color: #f5f5f7;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Navbar customization */
+.navbar-dark.bg-primary {
+  background-color: #0d6efd !important;
+}
+
+.navbar-dark .navbar-brand {
+  font-weight: 600;
+}
+
+.navbar-dark .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.navbar-dark .nav-link:hover,
+.navbar-dark .nav-link:focus {
+  color: #ffffff;
+}
+
+.navbar-dark .nav-link.active {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.navbar-dark .btn-outline-light:hover {
+  color: var(--primary);
+}
+
+/* Card header styling */
+.card-header.bg-primary {
+  background-color: #0d6efd !important; 
+}
+
+/* Card Enhancements */
+.card {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Button Enhancements */
+.btn {
+  border-radius: 5px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+}
+
+.btn-success {
+  background-color: var(--success);
+}
+
+/* Table Enhancements */
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  font-weight: 500;
+  color: var(--secondary);
+  border-top: none;
+}
+
+/* Dashboard Stats Cards */
+.card .card-body i.opacity-50 {
+  opacity: 0.2 !important;
+}
+
+/* Badges */
+.badge {
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+}
+
+/* Navbar Customization */
+.navbar-dark .navbar-brand {
+  font-weight: 600;
+}
+
+/* Footer Customization */
+.footer {
+  color: var(--secondary);
+}
+
+/* Product Timeline */
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 30px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -40px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+}
+
+/* Custom Form Styles */
+.form-control:focus {
+  border-color: #a4cafe;
+  box-shadow: 0 0 0 3px rgba(164, 202, 254, 0.45);
+}
+
+/* Helper Classes */
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* QR Code Container */
+.qr-code-container {
+  padding: 15px;
+  background-color: white;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+/* Blockchain ID Display */
+.blockchain-id {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .timeline {
+    padding-left: 30px;
+  }
+  
+  .timeline-dot {
+    left: -30px;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Hero Section with Background Image */
+.hero-section {
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  background-image: url('/images/background.jpg'); /* Đường dẫn tới ảnh nền */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* Tạo lớp overlay cho ảnh nền để text dễ đọc hơn */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Điều chỉnh độ mờ tại đây */
+  z-index: 1;
+}
+
+/* Đảm bảo nội dung hiển thị trên lớp overlay */
+.hero-section .container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Điều chỉnh màu text khi có nền tối */
+.hero-section h1,
+.hero-section p {
+  color: #ffffff;
+}
+
+/* Wallet connection styles */
+.wallet-required {
+  border-left: 4px solid var(--warning);
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.wallet-mismatch {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+.btn-pulse {
+  animation: btn-pulse 1s;
+}
+
+@keyframes btn-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.shake-animation {
+  animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%, 50%, 70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%, 60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* User Profile Dropdown Styling */
+.navbar-nav .dropdown-menu {
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+}
+
+.navbar-nav .dropdown-item {
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+}
+
+.navbar-nav .dropdown-item:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+.navbar-nav .dropdown-divider {
+  margin: 0.5rem 0;
+}
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+}

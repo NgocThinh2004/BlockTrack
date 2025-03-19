@@ -1,0 +1,299 @@
+<!-- Hero Section -->
+<div class="hero-section py-5" style="background-image: url('/images/background.jpg'); background-size: cover; background-position: center;">
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5);"></div>
+  <div class="container position-relative">
+    <div class="row align-items-center py-5">
+      <div class="col-md-6">
+        <h1 class="display-4 fw-bold mb-3 text-white">Truy xuất nguồn gốc sản phẩm qua Blockchain</h1>
+        <p class="lead mb-4 text-white">
+          Giải pháp toàn diện giúp minh bạch hóa thông tin sản phẩm từ nhà sản xuất đến người tiêu dùng, 
+          sử dụng công nghệ blockchain để đảm bảo tính toàn vẹn dữ liệu.
+        </p>
+        <div class="d-flex gap-3">
+          <a href="/track" class="btn btn-primary btn-lg px-4">
+            <i class="fas fa-search me-2"></i> Truy xuất ngay
+          </a>
+          <a href="/auth/register" class="btn btn-light btn-lg px-4">
+            <i class="fas fa-user-plus me-2"></i> Đăng ký
+          </a>
+        </div>
+      </div>
+      <div class="col-md-6 d-none d-md-block">
+        <img src="/images/blockchain-hero.svg" alt="Blockchain Illustration" class="img-fluid">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Scan Box -->
+<div class="container mt-n5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h3 class="card-title text-center mb-4">
+            <i class="fas fa-qrcode text-primary me-2"></i> Quét mã QR hoặc nhập mã sản phẩm
+          </h3>
+          <form action="/track/search" method="POST">
+            <div class="input-group input-group-lg mb-3">
+              <input type="text" name="productId" class="form-control" placeholder="Nhập mã sản phẩm...">
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search me-1"></i> Truy xuất
+              </button>
+            </div>
+          </form>
+          <div class="text-center mt-3">
+            <button class="btn btn-outline-primary" id="openScanner">
+              <i class="fas fa-camera me-2"></i> Mở máy quét QR
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<div class="container my-5 py-5">
+  <div class="text-center mb-5">
+    <h2 class="display-5 fw-bold">Tính năng nổi bật</h2>
+    <p class="lead text-muted">Sức mạnh của công nghệ blockchain trong truy xuất nguồn gốc</p>
+  </div>
+  
+  <div class="row g-4">
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center p-4">
+          <div class="feature-icon bg-primary bg-gradient text-white rounded-circle mb-3 d-inline-flex justify-content-center align-items-center" style="width: 64px; height: 64px;">
+            <i class="fas fa-shield-alt fa-2x"></i>
+          </div>
+          <h5>Bảo mật và toàn vẹn dữ liệu</h5>
+          <p class="text-muted">
+            Dữ liệu được lưu trữ trên blockchain không thể thay đổi, đảm bảo tính minh bạch và chống giả mạo.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center p-4">
+          <div class="feature-icon bg-success bg-gradient text-white rounded-circle mb-3 d-inline-flex justify-content-center align-items-center" style="width: 64px; height: 64px;">
+            <i class="fas fa-qrcode fa-2x"></i>
+          </div>
+          <h5>Theo dõi sản phẩm với mã QR</h5>
+          <p class="text-muted">
+            Quét mã QR để truy xuất toàn bộ lịch sử sản phẩm từ nguồn gốc đến tay người tiêu dùng.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body text-center p-4">
+          <div class="feature-icon bg-info bg-gradient text-white rounded-circle mb-3 d-inline-flex justify-content-center align-items-center" style="width: 64px; height: 64px;">
+            <i class="fas fa-project-diagram fa-2x"></i>
+          </div>
+          <h5>Quản lý toàn chuỗi cung ứng</h5>
+          <p class="text-muted">
+            Hệ thống kết nối các bên liên quan trong chuỗi cung ứng, từ nhà sản xuất đến nhà phân phối, bán lẻ.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="bg-light py-5 my-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="display-5 fw-bold">Quy trình hoạt động</h2>
+      <p class="lead text-muted">Từ nhà sản xuất đến tay người tiêu dùng</p>
+    </div>
+    
+    <div class="row">
+      <div class="col-lg-10 mx-auto">
+        <div class="card border-0 shadow">
+          <div class="card-body p-5">
+            <div class="row text-center">
+              <div class="col-md-3 mb-4 mb-md-0 position-relative">
+                <div class="process-step">
+                  <div class="process-circle bg-primary text-white mb-3">1</div>
+                  <h5>Nhà sản xuất</h5>
+                  <p class="text-muted small">Tạo sản phẩm và đưa thông tin lên blockchain</p>
+                </div>
+                <div class="process-connector d-none d-md-block"></div>
+              </div>
+              
+              <div class="col-md-3 mb-4 mb-md-0 position-relative">
+                <div class="process-step">
+                  <div class="process-circle bg-info text-white mb-3">2</div>
+                  <h5>Nhà phân phối</h5>
+                  <p class="text-muted small">Quản lý vận chuyển và cập nhật thông tin hàng hóa</p>
+                </div>
+                <div class="process-connector d-none d-md-block"></div>
+              </div>
+              
+              <div class="col-md-3 mb-4 mb-md-0 position-relative">
+                <div class="process-step">
+                  <div class="process-circle bg-warning text-white mb-3">3</div>
+                  <h5>Nhà bán lẻ</h5>
+                  <p class="text-muted small">Kiểm tra thông tin và bán sản phẩm đến người tiêu dùng</p>
+                </div>
+                <div class="process-connector d-none d-md-block"></div>
+              </div>
+              
+              <div class="col-md-3">
+                <div class="process-step">
+                  <div class="process-circle bg-success text-white mb-3">4</div>
+                  <h5>Người tiêu dùng</h5>
+                  <p class="text-muted small">Quét mã QR để xem toàn bộ hành trình sản phẩm</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Products section -->
+<div class="container my-5">
+  <div class="text-center mb-5">
+    <h2 class="display-5 fw-bold">Sản phẩm nổi bật</h2>
+    <p class="lead text-muted">Khám phá các sản phẩm đã được xác thực</p>
+  </div>
+
+  <div class="row g-4">
+    <% for(let i = 0; i < 3; i++) { %>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-header bg-white border-0 text-center pt-4">
+            <span class="badge bg-success mb-2">Đã xác thực</span>
+            <h5 class="card-title">Sản phẩm mẫu <%= i+1 %></h5>
+            <p class="card-subtitle text-muted">Nhà sản xuất: Công ty XYZ</p>
+          </div>
+          <div class="card-body text-center">
+            <div class="mb-3">
+              <i class="fas fa-box-open fa-4x text-primary opacity-50"></i>
+            </div>
+            <p class="card-text">Mô tả sản phẩm chất lượng cao đã được xác thực nguồn gốc trên blockchain.</p>
+          </div>
+          <div class="card-footer bg-white border-0 text-center pb-4">
+            <a href="/track" class="btn btn-outline-primary">
+              <i class="fas fa-search me-2"></i> Truy xuất
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="/products" class="btn btn-outline-primary">Xem tất cả sản phẩm</a>
+  </div>
+</div>
+
+<!-- CTA Section -->
+<div class="bg-primary text-white py-5 mt-5">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8 mb-3 mb-md-0">
+        <h2>Bạn muốn tham gia hệ thống?</h2>
+        <p class="lead mb-0">Đăng ký ngay để truy xuất thông tin sản phẩm hoặc đưa sản phẩm của bạn lên hệ thống.</p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="/auth/register" class="btn btn-light btn-lg">Đăng ký ngay</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-dark text-white py-4 mt-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4 mb-4 mb-md-0">
+        <h5><i class="fas fa-cubes me-2"></i> BlockTrack</h5>
+        <p class="text-muted">Hệ thống truy xuất nguồn gốc sản phẩm sử dụng công nghệ blockchain.</p>
+      </div>
+      <div class="col-md-2 mb-4 mb-md-0">
+        <h5>Liên kết</h5>
+        <ul class="list-unstyled">
+          <li><a href="/" class="text-muted">Trang chủ</a></li>
+          <li><a href="/track" class="text-muted">Truy xuất</a></li>
+          <li><a href="/products" class="text-muted">Sản phẩm</a></li>
+        </ul>
+      </div>
+      <div class="col-md-2 mb-4 mb-md-0">
+        <h5>Tài khoản</h5>
+        <ul class="list-unstyled">
+          <li><a href="/auth/login" class="text-muted">Đăng nhập</a></li>
+          <li><a href="/auth/register" class="text-muted">Đăng ký</a></li>
+          <li><a href="/auth/profile" class="text-muted">Hồ sơ</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h5>Liên hệ</h5>
+        <ul class="list-unstyled">
+          <li class="text-muted"><i class="fas fa-envelope me-2"></i> contact@blocktrack.com</li>
+          <li class="text-muted"><i class="fas fa-phone me-2"></i> (123) 456-7890</li>
+          <li class="text-muted"><i class="fas fa-map-marker-alt me-2"></i> 123 Blockchain St., Hanoi, Vietnam</li>
+        </ul>
+      </div>
+    </div>
+    <hr class="mt-4">
+    <div class="text-center">
+      <p class="mb-0 text-muted">&copy; <%= new Date().getFullYear() %> BlockTrack. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .process-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 auto;
+  }
+  
+  .process-step {
+    position: relative;
+    z-index: 1;
+  }
+  
+  .process-connector {
+    position: absolute;
+    top: 30px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background-color: #dee2e6;
+    z-index: 0;
+  }
+  
+  .hero-section {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+  }
+</style>
+
+<script>
+  document.getElementById('openScanner').addEventListener('click', function() {
+    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+      alert('Vui lòng cho phép truy cập camera để quét mã QR');
+      // Trong ứng dụng thực tế, đây sẽ mở một modal với scanner QR
+    } else {
+      alert('Trình duyệt của bạn không hỗ trợ quét mã QR. Vui lòng nhập mã sản phẩm.');
+    }
+  });
+</script>

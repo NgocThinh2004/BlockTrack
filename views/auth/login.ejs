@@ -1,0 +1,182 @@
+<!-- Hapus navbar hardcoded yang ada di sini -->
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h3 class="mb-0">Đăng nhập</h3>
+        </div>
+        
+        <div class="card-body p-4">
+          <% if (locals.registerSuccess) { %>
+            <div class="alert alert-success">
+              <i class="fas fa-check-circle me-2"></i>
+              Đăng ký tài khoản thành công! Vui lòng đăng nhập để tiếp tục.
+              <% if (locals.registeredName && locals.registeredRole) { %>
+                <hr>
+                <p class="mb-0">
+                  Tài khoản: <strong><%= registeredName %></strong><br>
+                  Vai trò: <span class="badge <%= 
+                    registeredRole === 'producer' ? 'bg-success' :
+                    registeredRole === 'distributor' ? 'bg-primary' :
+                    registeredRole === 'retailer' ? 'bg-info' :
+                    'bg-secondary'
+                  %>"><%= registeredRole %></span>
+                </p>
+              <% } %>
+            </div>
+          <% } %>
+          
+          <% if (locals.error) { %>
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle me-2"></i> <%= error %>
+            </div>
+          <% } %>
+          
+          <% if (locals.requireWallet && locals.userRole) { %>
+            <div class="alert alert-warning wallet-required">
+              <i class="fas fa-wallet me-2"></i>
+              <strong>Kết nối ví MetaMask bắt buộc!</strong> Vai trò <u><%= userRole %></u> yêu cầu xác thực địa chỉ ví để đăng nhập.
+              <% if (locals.walletMismatch) { %>
+                <hr>
+                <p class="mb-0 text-danger">
+                  <i class="fas fa-exclamation-triangle me-1"></i> Địa chỉ ví MetaMask không khớp với tài khoản này. Vui lòng kết nối đúng ví đã đăng ký.
+                </p>
+              <% } %>
+            </div>
+          <% } %>
+          
+          <form id="loginForm" action="/auth/login" method="POST">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-envelope"></i>
+                </span>
+                <input type="email" class="form-control" id="email" name="email" value="<%= locals.registeredEmail || (locals.email || '') %>" required>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="password" class="form-label">Mật khẩu</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-lock"></i>
+                </span>
+                <input type="password" class="form-control" id="password" name="password" required>
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="mb-4">
+              <label for="connectMetaMask" class="form-label d-flex justify-content-between">
+                <span>Kết nối ví MetaMask <% if (locals.requireWallet) { %><span class="text-danger">*</span><% } %></span>
+              </label>
+              <button type="button" id="connectMetaMask" class="btn <%= locals.walletMismatch ? 'btn-danger wallet-mismatch' : 'btn-outline-primary' %> w-100">
+                <i class="fas fa-wallet me-2"></i> <%= locals.walletMismatch ? 'Địa chỉ ví không đúng! Kết nối lại' : 'Kết nối ví MetaMask' %>
+              </button>
+              <small id="walletStatus" class="form-text text-muted d-none mt-1">
+                Đã kết nối: <span id="walletAddress"></span>
+              </small>
+              <input type="hidden" id="walletAddressInput" name="walletAddress">
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" id="loginButton" class="btn btn-primary btn-lg">Đăng nhập</button>
+            </div>
+            
+            <div class="text-center mt-4">
+              <p>Chưa có tài khoản? <a href="/auth/register">Đăng ký ngay</a></p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ...existing script code... -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const connectMetaMaskBtn = document.getElementById('connectMetaMask');
+    const walletStatus = document.getElementById('walletStatus');
+    const walletAddressSpan = document.getElementById('walletAddress');
+    const walletAddressInput = document.getElementById('walletAddressInput');
+    const loginButton = document.getElementById('loginButton');
+    const requireWallet = <%= locals.requireWallet ? 'true' : 'false' %>;
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    
+    // Toggle password visibility
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+      });
+    }
+    
+    // Disable login button if wallet is required but not connected
+    if (requireWallet) {
+      loginButton.disabled = true;
+      loginButton.innerHTML = '<i class="fas fa-wallet me-2"></i> Kết nối ví để đăng nhập';
+    }
+
+    connectMetaMaskBtn.addEventListener('click', async function() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          // Reset UI state
+          connectMetaMaskBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang kết nối...';
+          
+          const accounts = await ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          
+          if (accounts.length > 0) {
+            const address = accounts[0];
+            walletAddressSpan.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
+            walletAddressInput.value = address;
+            walletStatus.classList.remove('d-none');
+            
+            connectMetaMaskBtn.classList.remove('btn-outline-primary');
+            connectMetaMaskBtn.classList.remove('btn-danger');
+            connectMetaMaskBtn.classList.remove('wallet-mismatch');
+            connectMetaMaskBtn.classList.add('btn-success');
+            connectMetaMaskBtn.innerHTML = '<i class="fas fa-check me-2"></i> Ví đã kết nối';
+            
+            if (requireWallet) {
+              loginButton.disabled = false;
+              loginButton.innerHTML = 'Đăng nhập';
+              loginButton.classList.add('btn-pulse');
+              setTimeout(() => loginButton.classList.remove('btn-pulse'), 2000);
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi kết nối MetaMask:', error);
+          connectMetaMaskBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Lỗi kết nối';
+          setTimeout(() => {
+            connectMetaMaskBtn.innerHTML = '<i class="fas fa-wallet me-2"></i> Kết nối ví MetaMask';
+          }, 2000);
+          alert('Không thể kết nối với MetaMask. Vui lòng thử lại.');
+        }
+      } else {
+        alert('Bạn cần cài đặt MetaMask để sử dụng tính năng này.');
+        window.open('https://metamask.io/download.html', '_blank');
+      }
+    });
+    
+    const loginForm = document.getElementById('loginForm');
+    loginForm.addEventListener('submit', function(event) {
+      if (requireWallet && !walletAddressInput.value) {
+        event.preventDefault();
+        connectMetaMaskBtn.classList.add('shake-animation');
+        setTimeout(() => connectMetaMaskBtn.classList.remove('shake-animation'), 820);
+        alert('Vui lòng kết nối ví MetaMask để đăng nhập với vai trò này.');
+      }
+    });
+  });
+</script>

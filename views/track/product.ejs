@@ -1,0 +1,186 @@
+<div class="container mt-4">
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h3 class="mb-0 d-flex align-items-center">
+        <i class="fas fa-search-location text-primary me-2"></i>
+        Kết quả truy xuất sản phẩm
+      </h3>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-success">
+        <i class="fas fa-check-circle me-2"></i> Sản phẩm này đã được xác thực trên blockchain
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="d-flex mb-3">
+            <div>
+              <h4><%= product.name %></h4>
+              <h6 class="text-muted">Mã sản phẩm: <%= product.id %></h6>
+            </div>
+          </div>
+          
+          <table class="table">
+            <tbody>
+              <tr>
+                <th style="width: 150px;">Nhà sản xuất</th>
+                <td><%= product.manufacturer %></td>
+              </tr>
+              <tr>
+                <th>Xuất xứ</th>
+                <td><%= product.origin %></td>
+              </tr>
+              <tr>
+                <th>Ngày sản xuất</th>
+                <td><%= new Date(product.productionDate).toLocaleDateString() %></td>
+              </tr>
+              <% if (product.expiryDate) { %>
+              <tr>
+                <th>Hạn sử dụng</th>
+                <td><%= new Date(product.expiryDate).toLocaleDateString() %></td>
+              </tr>
+              <% } %>
+              <tr>
+                <th>Số lô</th>
+                <td><%= product.batchNumber || 'N/A' %></td>
+              </tr>
+              <tr>
+                <th>Trạng thái hiện tại</th>
+                <td>
+                  <span class="badge bg-<%= 
+                    product.currentStage === 'production' ? 'primary' : 
+                    product.currentStage === 'packaging' ? 'info' : 
+                    product.currentStage === 'distribution' ? 'warning' : 
+                    product.currentStage === 'retail' ? 'success' : 
+                    product.currentStage === 'sold' ? 'secondary' : 'dark' 
+                  %>">
+                    <%= product.currentStage %>
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body text-center">
+              <h5 class="card-title">Blockchain</h5>
+              <p class="card-text">Sản phẩm này đã được xác thực trên blockchain</p>
+              <div class="d-flex justify-content-center mb-3">
+                <% if (qrCode) { %>
+                  <img src="<%= qrCode.qrImageUrl %>" alt="QR Code" class="img-fluid" style="max-width: 150px;">
+                <% } else { %>
+                  <div class="bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">
+                    <i class="fas fa-qrcode fa-3x text-muted"></i>
+                  </div>
+                <% } %>
+              </div>
+              <small class="text-muted">Blockchain ID: <%= product.blockchainId || 'Đang xử lý' %></small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% if (product.description) { %>
+        <div class="mb-4">
+          <h5>Thông tin sản phẩm</h5>
+          <p><%= product.description %></p>
+        </div>
+      <% } %>
+      
+      <h5 class="mb-3">Hành trình sản phẩm</h5>
+      <div class="product-journey mb-4">
+        <div class="timeline">
+          <% if (history && history.length > 0) { %>
+            <% history.forEach((stage, index) => { %>
+              <div class="timeline-item">
+                <div class="timeline-dot <%= 
+                  stage.stageName === 'production' ? 'bg-primary' : 
+                  stage.stageName === 'packaging' ? 'bg-info' : 
+                  stage.stageName === 'distribution' ? 'bg-warning' : 
+                  stage.stageName === 'retail' ? 'bg-success' : 
+                  'bg-secondary' 
+                %>"></div>
+                <div class="timeline-content">
+                  <h6 class="<%= index === 0 ? 'text-primary fw-bold' : '' %>">
+                    <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
+                  </h6>
+                  <p><%= stage.description %></p>
+                  <div class="timeline-meta">
+                    <span><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></span>
+                    <span><i class="fas fa-calendar-alt me-1"></i> <%= new Date(stage.timestamp).toLocaleString() %></span>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="text-center text-muted py-4">
+              <p>Không có dữ liệu lịch sử</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between mt-4">
+        <a href="/track" class="btn btn-outline-primary">
+          <i class="fas fa-search me-1"></i> Truy xuất sản phẩm khác
+        </a>
+        <a href="/" class="btn btn-outline-secondary">
+          <i class="fas fa-home me-1"></i> Về trang chủ
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.timeline {
+  position: relative;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 20px;
+  width: 2px;
+  background-color: #e9ecef;
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 50px;
+  padding-bottom: 30px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.timeline-content {
+  padding: 15px;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #dee2e6;
+}
+
+.timeline-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.timeline-meta span {
+  margin-right: 10px;
+}
+</style>

@@ -1,0 +1,112 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/products">Sản phẩm</a></li>
+      <li class="breadcrumb-item"><a href="/products/<%= product.id %>"><%= product.name %></a></li>
+      <li class="breadcrumb-item active">Thêm giai đoạn</li>
+    </ol>
+  </nav>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h3 class="mb-0">Thêm giai đoạn mới</h3>
+        </div>
+        <div class="card-body">
+          <form action="/stages/product/<%= product.id %>/add" method="POST">
+            <div class="mb-3">
+              <label for="stageName" class="form-label">Giai đoạn</label>
+              <select class="form-select" id="stageName" name="stageName" required>
+                <option value="" selected disabled>Chọn giai đoạn</option>
+                <% if (product.currentStage === 'production') { %>
+                  <option value="packaging">Đóng gói</option>
+                <% } else if (product.currentStage === 'packaging') { %>
+                  <option value="distribution">Vận chuyển / Phân phối</option>
+                <% } else if (product.currentStage === 'distribution') { %>
+                  <option value="retail">Bán lẻ</option>
+                <% } else if (product.currentStage === 'retail') { %>
+                  <option value="sold">Đã bán</option>
+                <% } %>
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="location" class="form-label">Địa điểm</label>
+              <input type="text" class="form-control" id="location" name="location" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label">Mô tả</label>
+              <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+              <div class="form-text">Mô tả chi tiết hoạt động diễn ra trong giai đoạn này.</div>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+              <a href="/products/<%= product.id %>" class="btn btn-secondary">Hủy</a>
+              <button type="submit" class="btn btn-primary">Lưu giai đoạn</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Thông tin sản phẩm</h5>
+        </div>
+        <div class="card-body">
+          <h6 class="card-subtitle mb-3"><%= product.name %></h6>
+          <p><strong>Nhà sản xuất:</strong> <%= product.manufacturer %></p>
+          <p><strong>Xuất xứ:</strong> <%= product.origin %></p>
+          <p><strong>Giai đoạn hiện tại:</strong> 
+            <span class="badge bg-<%= 
+              product.currentStage === 'production' ? 'primary' : 
+              product.currentStage === 'packaging' ? 'info' : 
+              product.currentStage === 'distribution' ? 'warning' : 
+              product.currentStage === 'retail' ? 'success' : 'secondary' 
+            %>">
+              <%= product.currentStage %>
+            </span>
+          </p>
+        </div>
+      </div>
+      
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Lịch sử giai đoạn</h5>
+        </div>
+        <div class="card-body p-0">
+          <ul class="list-group list-group-flush">
+            <% if (stages && stages.length > 0) { %>
+              <% stages.forEach(stage => { %>
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between">
+                    <span class="badge bg-<%= 
+                      stage.stageName === 'production' ? 'primary' : 
+                      stage.stageName === 'packaging' ? 'info' : 
+                      stage.stageName === 'distribution' ? 'warning' : 
+                      stage.stageName === 'retail' ? 'success' : 'secondary' 
+                    %>">
+                      <%= stage.stageName %>
+                    </span>
+                    <small class="text-muted">
+                      <%= new Date(stage.timestamp).toLocaleDateString() %>
+                    </small>
+                  </div>
+                  <p class="mb-0 mt-2 small"><%= stage.location %></p>
+                  <small class="text-muted"><%= stage.description %></small>
+                </li>
+              <% }) %>
+            <% } else { %>
+              <li class="list-group-item text-center py-3">
+                <p class="text-muted mb-0">Không có dữ liệu lịch sử</p>
+              </li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

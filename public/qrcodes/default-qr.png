@@ -1,0 +1,7 @@
+<!-- This is a binary file, but we'll create a placeholder SVG instead -->
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="white" />
+  <rect x="20" y="20" width="160" height="160" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2" />
+  <text x="100" y="100" font-family="Arial" font-size="14" text-anchor="middle" fill="#6c757d">QR Placeholder</text>
+  <text x="100" y="120" font-family="Arial" font-size="12" text-anchor="middle" fill="#6c757d">Image not found</text>
+</svg>

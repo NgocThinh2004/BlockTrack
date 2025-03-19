@@ -1,0 +1,173 @@
+<!-- Hapus navbar hardcoded yang ada di sini -->
+
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+          <h4 class="mb-0">Thông tin cá nhân</h4>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-4">
+            <div class="avatar-container mb-3">
+              <span class="avatar bg-primary rounded-circle">
+                <%= user.name.charAt(0).toUpperCase() %>
+              </span>
+            </div>
+            <h4><%= user.name %></h4>
+            <span class="badge <%= 
+              user.role === 'producer' ? 'bg-success' :
+              user.role === 'distributor' ? 'bg-primary' :
+              user.role === 'retailer' ? 'bg-info' :
+              'bg-secondary'
+            %>"><%= user.role %></span>
+          </div>
+          
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-envelope me-2"></i> Email</span>
+              <span class="text-muted"><%= user.email %></span>
+            </li>
+            <% if (user.address) { %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-map-marker-alt me-2"></i> Địa chỉ</span>
+                <span class="text-muted"><%= user.address %></span>
+              </li>
+            <% } %>
+            <% if (user.walletAddress) { %>
+              <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-wallet me-2"></i> Ví Blockchain</span>
+                </div>
+                <small class="text-break text-muted"><%= user.walletAddress %></small>
+              </li>
+            <% } %>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="d-grid gap-2">
+        <a href="/dashboard" class="btn btn-primary">
+          <i class="fas fa-tachometer-alt me-2"></i> Đi đến Dashboard
+        </a>
+      </div>
+    </div>
+    
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h4 class="mb-0">Cập nhật thông tin</h4>
+        </div>
+        <div class="card-body">
+          <form action="/auth/profile" method="POST">
+            <div class="mb-3">
+              <label for="name" class="form-label">Họ và tên</label>
+              <input type="text" class="form-control" id="name" name="name" value="<%= user.name %>" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="address" class="form-label">Địa chỉ</label>
+              <textarea class="form-control" id="address" name="address" rows="3"><%= user.address || '' %></textarea>
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label">Ví Blockchain</label>
+              <% if (user.walletAddress) { %>
+                <div class="input-group">
+                  <input type="text" class="form-control" value="<%= user.walletAddress %>" disabled>
+                  <button id="disconnectWallet" type="button" class="btn btn-outline-danger">Ngắt kết nối</button>
+                </div>
+              <% } else { %>
+                <button id="connectMetaMask" type="button" class="btn btn-outline-primary d-block w-100">
+                  <i class="fas fa-wallet me-2"></i> Kết nối MetaMask
+                </button>
+                <input type="hidden" id="walletAddressInput" name="walletAddress">
+              <% } %>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i> Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white py-3">
+          <h4 class="mb-0">Đổi mật khẩu</h4>
+        </div>
+        <div class="card-body">
+          <form action="/auth/change-password" method="POST">
+            <div class="mb-3">
+              <label for="currentPassword" class="form-label">Mật khẩu hiện tại</label>
+              <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="newPassword" class="form-label">Mật khẩu mới</label>
+              <input type="password" class="form-control" id="newPassword" name="newPassword" required minlength="6">
+            </div>
+            
+            <div class="mb-4">
+              <label for="confirmPassword" class="form-label">Xác nhận mật khẩu mới</label>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required minlength="6">
+            </div>
+            
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-warning">
+                <i class="fas fa-key me-2"></i> Đổi mật khẩu
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .avatar {
+    width: 80px;
+    height: 80px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const connectMetaMaskBtn = document.getElementById('connectMetaMask');
+    const walletAddressInput = document.getElementById('walletAddressInput');
+    
+    if (connectMetaMaskBtn) {
+      connectMetaMaskBtn.addEventListener('click', async function() {
+        if (typeof window.ethereum !== 'undefined') {
+          try {
+            const accounts = await ethereum.request({
+              method: 'eth_requestAccounts'
+            });
+            
+            if (accounts.length > 0) {
+              const address = accounts[0];
+              walletAddressInput.value = address;
+              connectMetaMaskBtn.classList.remove('btn-outline-primary');
+              connectMetaMaskBtn.classList.add('btn-success');
+              connectMetaMaskBtn.innerHTML = '<i class="fas fa-check me-2"></i> Ví đã kết nối';
+            }
+          } catch (error) {
+            console.error('Lỗi kết nối MetaMask:', error);
+            alert('Không thể kết nối với MetaMask. Vui lòng thử lại.');
+          }
+        } else {
+          alert('Bạn cần cài đặt MetaMask để sử dụng tính năng này.');
+          window.open('https://metamask.io/download.html', '_blank');
+        }
+      });
+    }
+  });
+</script>

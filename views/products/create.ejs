@@ -1,0 +1,67 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-10 mx-auto">
+      <h2 class="mb-4">Tạo sản phẩm mới</h2>
+      
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <form action="/products/create" method="POST">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="name" class="form-label">Tên sản phẩm</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="manufacturer" class="form-label">Nhà sản xuất</label>
+                <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="origin" class="form-label">Xuất xứ</label>
+                <input type="text" class="form-control" id="origin" name="origin" required>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="batchNumber" class="form-label">Số lô</label>
+                <input type="text" class="form-control" id="batchNumber" name="batchNumber">
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="productionDate" class="form-label">Ngày sản xuất</label>
+                <input type="date" class="form-control" id="productionDate" name="productionDate" required>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="expiryDate" class="form-label">Hạn sử dụng</label>
+                <input type="date" class="form-control" id="expiryDate" name="expiryDate">
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label">Mô tả sản phẩm</label>
+              <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+              <a href="/products" class="btn btn-secondary">Hủy</a>
+              <button type="submit" class="btn btn-primary">Tạo sản phẩm</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Set default production date to today
+  document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('productionDate').value = today;
+  });
+</script>
