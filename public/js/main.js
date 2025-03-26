@@ -23,7 +23,41 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Form Validations
   validateForms();
+  
+  // Initialize background slideshow if exists
+  initBackgroundSlideshow();
 });
+
+/**
+ * Initialize background slideshow on homepage
+ */
+function initBackgroundSlideshow() {
+  const slides = document.querySelectorAll('.slide');
+  
+  if (slides.length > 0) {
+    let slideIndex = 0;
+    
+    function showSlides() {
+      // Hide all slides
+      slides.forEach(slide => slide.classList.remove('active'));
+      
+      // Move to next slide
+      slideIndex++;
+      if (slideIndex >= slides.length) {
+        slideIndex = 0;
+      }
+      
+      // Show current slide
+      slides[slideIndex].classList.add('active');
+      
+      // Change slide every 5 seconds
+      setTimeout(showSlides, 5000);
+    }
+    
+    // Start slideshow
+    showSlides();
+  }
+}
 
 /**
  * Initialize QR Scanner if available

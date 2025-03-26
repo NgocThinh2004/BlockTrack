@@ -1,9 +1,146 @@
-<!-- Hero Section -->
-<div class="hero-section py-5" style="background-image: url('/images/background.jpg'); background-size: cover; background-position: center;">
-  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5);"></div>
+<!-- Hero Section với Background SVG nội tuyến -->
+<div class="hero-section py-5">
+  <!-- Background SVG Container -->
+  <div class="svg-background-container">
+    <!-- Background 1 -->
+    <svg class="svg-background active" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- Gradients và patterns -->
+      <defs>
+        <linearGradient id="bgGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#1a237e;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#4a148c;stop-opacity:1" />
+        </linearGradient>
+        
+        <pattern id="grid1" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
+        </pattern>
+        
+        <linearGradient id="glowGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#03a9f4;stop-opacity:0.7" />
+          <stop offset="100%" style="stop-color:#03a9f4;stop-opacity:0.3" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Nền với gradient -->
+      <rect width="100%" height="100%" fill="url(#bgGradient1)" />
+      
+      <!-- Overlay lưới -->
+      <rect width="100%" height="100%" fill="url(#grid1)"/>
+      
+      <!-- Hiệu ứng sáng -->
+      <circle cx="0" cy="0" r="300" fill="url(#glowGradient1)" opacity="0.1" />
+      <circle cx="1280" cy="720" r="250" fill="url(#glowGradient1)" opacity="0.1" />
+      
+      <!-- Mạng lưới blockchain - Nodes/Blocks và Connections -->
+      <g opacity="0.15" class="network-animation">
+        <!-- Các node và connection sẽ được tạo bởi JavaScript -->
+      </g>
+      
+      <!-- Biểu tượng blockchain -->
+      <g transform="translate(80, 530)" class="blockchain-icon">
+        <rect x="0" y="0" width="50" height="50" rx="8" fill="#03a9f4" opacity="0.9" />
+        <rect x="70" y="0" width="50" height="50" rx="8" fill="#03a9f4" opacity="0.9" />
+        <rect x="140" y="0" width="50" height="50" rx="8" fill="#03a9f4" opacity="0.9" />
+        <line x1="50" y1="25" x2="70" y2="25" stroke="white" stroke-width="3" />
+        <line x1="120" y1="25" x2="140" y2="25" stroke="white" stroke-width="3" />
+      </g>
+    </svg>
+    
+    <!-- Background 2 -->
+    <svg class="svg-background" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- Gradients và patterns -->
+      <defs>
+        <linearGradient id="bgGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#004d40;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#006064;stop-opacity:1" />
+        </linearGradient>
+        
+        <pattern id="grid2" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
+        </pattern>
+        
+        <linearGradient id="glowGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#26a69a;stop-opacity:0.7" />
+          <stop offset="100%" style="stop-color:#26a69a;stop-opacity:0.3" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Nền với gradient -->
+      <rect width="100%" height="100%" fill="url(#bgGradient2)" />
+      
+      <!-- Overlay lưới -->
+      <rect width="100%" height="100%" fill="url(#grid2)"/>
+      
+      <!-- Hiệu ứng sáng -->
+      <circle cx="0" cy="0" r="300" fill="url(#glowGradient2)" opacity="0.1" />
+      <circle cx="1280" cy="720" r="250" fill="url(#glowGradient2)" opacity="0.1" />
+      
+      <!-- Mạng lưới blockchain - Nodes/Blocks và Connections -->
+      <g opacity="0.15" class="network-animation">
+        <!-- Các node và connection sẽ được tạo bởi JavaScript -->
+      </g>
+      
+      <!-- Biểu tượng supply chain -->
+      <g transform="translate(80, 530)" class="blockchain-icon">
+        <rect x="0" y="0" width="40" height="40" rx="8" fill="#26a69a" opacity="0.9" />
+        <rect x="50" y="0" width="40" height="40" rx="8" fill="#26a69a" opacity="0.9" />
+        <rect x="100" y="0" width="40" height="40" rx="8" fill="#26a69a" opacity="0.9" />
+        <rect x="150" y="0" width="40" height="40" rx="8" fill="#26a69a" opacity="0.9" />
+        <line x1="40" y1="20" x2="50" y2="20" stroke="white" stroke-width="3" />
+        <line x1="90" y1="20" x2="100" y2="20" stroke="white" stroke-width="3" />
+        <line x1="140" y1="20" x2="150" y2="20" stroke="white" stroke-width="3" />
+      </g>
+    </svg>
+    
+    <!-- Background 3 -->
+    <svg class="svg-background" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <!-- Gradients và patterns -->
+      <defs>
+        <linearGradient id="bgGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#0d47a1;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#01579b;stop-opacity:1" />
+        </linearGradient>
+        
+        <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1"/>
+        </pattern>
+        
+        <linearGradient id="glowGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#29b6f6;stop-opacity:0.7" />
+          <stop offset="100%" style="stop-color:#29b6f6;stop-opacity:0.3" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Nền với gradient -->
+      <rect width="100%" height="100%" fill="url(#bgGradient3)" />
+      
+      <!-- Overlay lưới -->
+      <rect width="100%" height="100%" fill="url(#grid3)"/>
+      
+      <!-- Hiệu ứng sáng -->
+      <circle cx="0" cy="0" r="300" fill="url(#glowGradient3)" opacity="0.1" />
+      <circle cx="1280" cy="720" r="250" fill="url(#glowGradient3)" opacity="0.1" />
+      
+      <!-- Mạng lưới blockchain - Nodes/Blocks và Connections -->
+      <g opacity="0.15" class="network-animation">
+        <!-- Các node và connection sẽ được tạo bởi JavaScript -->
+      </g>
+      
+      <!-- Biểu tượng security -->
+      <g transform="translate(80, 520)" class="blockchain-icon">
+        <path d="M90,0 L180,30 L180,90 C180,140 140,180 90,190 C40,180 0,140 0,90 L0,30 Z" fill="#29b6f6" opacity="0.9" />
+        <path d="M90,20 L150,40 L150,90 C150,120 125,150 90,160 C55,150 30,120 30,90 L30,40 Z" fill="none" stroke="white" stroke-width="3" />
+        <path d="M65,90 L80,105 L115,70" fill="none" stroke="white" stroke-width="5" />
+      </g>
+    </svg>
+    
+    <!-- Overlay to darken the background -->
+    <div class="slide-overlay"></div>
+  </div>
+  
   <div class="container position-relative">
     <div class="row align-items-center py-5">
-      <div class="col-md-6">
+      <div class="col-md-7">
         <h1 class="display-4 fw-bold mb-3 text-white">Truy xuất nguồn gốc sản phẩm qua Blockchain</h1>
         <p class="lead mb-4 text-white">
           Giải pháp toàn diện giúp minh bạch hóa thông tin sản phẩm từ nhà sản xuất đến người tiêu dùng, 
@@ -17,9 +154,6 @@
             <i class="fas fa-user-plus me-2"></i> Đăng ký
           </a>
         </div>
-      </div>
-      <div class="col-md-6 d-none d-md-block">
-        <img src="/images/blockchain-hero.svg" alt="Blockchain Illustration" class="img-fluid">
       </div>
     </div>
   </div>
@@ -253,47 +387,163 @@
 </footer>
 
 <style>
-  .process-circle {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+  /* SVG Background Styling */
+  .hero-section {
+    position: relative;
+    min-height: 80vh;
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0 auto;
+    overflow: hidden;
   }
   
-  .process-step {
-    position: relative;
-    z-index: 1;
-  }
-  
-  .process-connector {
+  .svg-background-container {
     position: absolute;
-    top: 30px;
-    right: -50%;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 2px;
-    background-color: #dee2e6;
+    height: 100%;
     z-index: 0;
   }
   
-  .hero-section {
-    min-height: 70vh;
-    display: flex;
-    align-items: center;
+  .svg-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 0;
   }
+  
+  .svg-background.active {
+    opacity: 1;
+  }
+  
+  .slide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+  }
+  
+  .hero-section .container {
+    position: relative;
+    z-index: 2;
+  }
+  
+  .hero-section h1,
+  .hero-section p {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  /* Animation cho blockchain icon */
+  .blockchain-icon {
+    animation: float 3s ease-in-out infinite alternate;
+  }
+  
+  @keyframes float {
+    from { transform: translate(80px, 530px); }
+    to { transform: translate(80px, 515px); }
+  }
+  
+  /* Các animation khác... */
 </style>
 
 <script>
-  document.getElementById('openScanner').addEventListener('click', function() {
-    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-      alert('Vui lòng cho phép truy cập camera để quét mã QR');
-      // Trong ứng dụng thực tế, đây sẽ mở một modal với scanner QR
-    } else {
-      alert('Trình duyệt của bạn không hỗ trợ quét mã QR. Vui lòng nhập mã sản phẩm.');
+  document.addEventListener('DOMContentLoaded', function() {
+    // Slideshow functionality
+    let slideIndex = 0;
+    const slides = document.querySelectorAll('.svg-background');
+    
+    function showSlides() {
+      // Hide all slides
+      slides.forEach(slide => slide.classList.remove('active'));
+      
+      // Move to next slide
+      slideIndex++;
+      if (slideIndex >= slides.length) {
+        slideIndex = 0;
+      }
+      
+      // Show current slide
+      slides[slideIndex].classList.add('active');
+      
+      // Change slide every 5 seconds
+      setTimeout(showSlides, 5000);
     }
+    
+    // Start slideshow
+    if (slides.length > 0) {
+      showSlides();
+    }
+    
+    // Generate network nodes dynamically for each SVG background
+    const networkAnimations = document.querySelectorAll('.network-animation');
+    networkAnimations.forEach(networkContainer => {
+      // Create nodes (circles)
+      const numNodes = 15;
+      const svgNS = "http://www.w3.org/2000/svg";
+      
+      // Generate random positions
+      const positions = [];
+      for (let i = 0; i < numNodes; i++) {
+        positions.push({
+          x: Math.floor(Math.random() * 1100) + 100,
+          y: Math.floor(Math.random() * 500) + 100
+        });
+      }
+      
+      // Create circles
+      positions.forEach(pos => {
+        const circle = document.createElementNS(svgNS, "circle");
+        circle.setAttributeNS(null, "cx", pos.x);
+        circle.setAttributeNS(null, "cy", pos.y);
+        circle.setAttributeNS(null, "r", "5");
+        circle.setAttributeNS(null, "fill", "white");
+        networkContainer.appendChild(circle);
+      });
+      
+      // Create connections
+      for (let i = 0; i < positions.length; i++) {
+        // Connect to 2-3 closest nodes
+        const others = [...positions];
+        others.splice(i, 1);
+        
+        // Sort by distance
+        others.sort((a, b) => {
+          const distA = Math.hypot(positions[i].x - a.x, positions[i].y - a.y);
+          const distB = Math.hypot(positions[i].x - b.x, positions[i].y - b.y);
+          return distA - distB;
+        });
+        
+        // Connect to closest 2-3 nodes
+        const numConnections = Math.floor(Math.random() * 2) + 1; // 1-2 connections
+        for (let j = 0; j < numConnections && j < others.length; j++) {
+          const line = document.createElementNS(svgNS, "line");
+          line.setAttributeNS(null, "x1", positions[i].x);
+          line.setAttributeNS(null, "y1", positions[i].y);
+          line.setAttributeNS(null, "x2", others[j].x);
+          line.setAttributeNS(null, "y2", others[j].y);
+          line.setAttributeNS(null, "stroke", "white");
+          line.setAttributeNS(null, "stroke-width", "1");
+          networkContainer.appendChild(line);
+        }
+      }
+    });
+    
+    // QR scanner functionality
+    document.getElementById('openScanner')?.addEventListener('click', function() {
+      if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+        alert('Vui lòng cho phép truy cập camera để quét mã QR');
+        // Trong ứng dụng thực tế, đây sẽ mở một modal với scanner QR
+      } else {
+        alert('Trình duyệt của bạn không hỗ trợ quét mã QR. Vui lòng nhập mã sản phẩm.');
+      }
+    });
   });
 </script>

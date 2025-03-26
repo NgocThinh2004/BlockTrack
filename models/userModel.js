@@ -105,6 +105,61 @@ class User {
   }
 
   /**
+   * Get user by wallet address
+   * @param {string} walletAddress - Blockchain wallet address
+   * @returns {Object|null} - User data or null
+   */
+  static async getUserByWalletAddress(walletAddress) {
+    try {
+      if (!walletAddress) return null;
+      
+      const snapshot = await firebase.firestore()
+        .collection('users')
+        .where('walletAddress', '==', walletAddress)
+        .limit(1)
+        .get();
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      return {
+        id: snapshot.docs[0].id,
+        ...snapshot.docs[0].data()
+      };
+    } catch (error) {
+      console.error('Error getting user by wallet address:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Update user information
+   * @param {string} userId - User ID
+   * @param {Object} updateData - Data to update
+   * @returns {Promise<boolean>} - Success status
+   */
+  static async updateUser(userId, updateData) {
+    try {
+      // Don't allow updating certain fields directly
+      const { id, email, password, role, createdAt, ...allowedUpdates } = updateData;
+      
+      // Add update timestamp
+      allowedUpdates.updatedAt = new Date().toISOString();
+      
+      await firebase.firestore()
+        .collection('users')
+        .doc(userId)
+        .update(allowedUpdates);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Verify password
    * @param {string} password - Plain text password
    * @param {string} hashedPassword - Hashed password

@@ -176,40 +176,131 @@ a {
   }
 }
 
-/* Hero Section with Background Image */
+/* Hero Section with Background Slideshow */
 .hero-section {
-  min-height: 70vh;
+  position: relative;
+  min-height: 80vh; /* Tăng chiều cao lên để hiển thị nội dung tốt hơn */
   display: flex;
   align-items: center;
-  background-image: url('/images/background.jpg'); /* Đường dẫn tới ảnh nền */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
+  overflow: hidden;
 }
 
-/* Tạo lớp overlay cho ảnh nền để text dễ đọc hơn */
-.hero-section::before {
-  content: '';
+.slideshow-container {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5); /* Điều chỉnh độ mờ tại đây */
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 0;
+  transform: scale(1.05);
+  animation: zoomEffect 8s infinite alternate;
+}
+
+@keyframes zoomEffect {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.slide-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Làm tối hơn để text rõ hơn */
   z-index: 1;
 }
 
-/* Đảm bảo nội dung hiển thị trên lớp overlay */
 .hero-section .container {
   position: relative;
   z-index: 2;
 }
 
-/* Điều chỉnh màu text khi có nền tối */
 .hero-section h1,
 .hero-section p {
   color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Thêm text shadow để dễ đọc hơn */
+}
+
+/* SVG Background Styling */
+.hero-section {
+  position: relative;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.svg-background-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.svg-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  z-index: 0;
+}
+
+.svg-background.active {
+  opacity: 1;
+}
+
+.slide-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.hero-section .container {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-section h1,
+.hero-section p {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Animation cho blockchain icon */
+@keyframes float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-15px); }
+}
+
+.blockchain-icon {
+  animation: float 3s ease-in-out infinite alternate;
 }
 
 /* Wallet connection styles */

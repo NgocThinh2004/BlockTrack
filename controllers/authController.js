@@ -12,10 +12,22 @@ exports.register = async (req, res) => {
     const existingUser = await User.getUserByEmail(email);
     if (existingUser) {
       return res.status(400).render('auth/register', { 
-        error: 'Email đã được sử dụng',
+        error: 'Email đã được sử dụng bởi tài khoản khác',
         formData: req.body,
         title: 'Đăng ký tài khoản'
       });
+    }
+    
+    // Check if wallet address already exists (if provided)
+    if (walletAddress) {
+      const existingUserWithWallet = await User.getUserByWalletAddress(walletAddress);
+      if (existingUserWithWallet) {
+        return res.status(400).render('auth/register', { 
+          error: 'Địa chỉ ví đã được liên kết với tài khoản khác',
+          formData: req.body,
+          title: 'Đăng ký tài khoản'
+        });
+      }
     }
     
     // Create new user
@@ -47,7 +59,6 @@ exports.login = async (req, res) => {
     
     // Find user
     const user = await User.getUserByEmail(email);
-    
     if (!user) {
       return res.status(401).render('auth/login', {
         title: 'Đăng nhập',
@@ -120,7 +131,43 @@ exports.getProfile = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-  res.send('Update profile - Not implemented');
+  try {
+    const userId = req.session.userId;
+    const { name, address, walletAddress } = req.body;
+    
+    // If wallet address is provided, check if it's already linked to another account
+    if (walletAddress) {
+      const existingUserWithWallet = await User.getUserByWalletAddress(walletAddress);
+      if (existingUserWithWallet && existingUserWithWallet.id !== userId) {
+        const user = await User.getUserById(userId);
+        return res.status(400).render('auth/profile', {
+          title: 'Hồ sơ',
+          error: 'Địa chỉ ví đã được liên kết với tài khoản khác',
+          user
+        });
+      }
+    }
+    
+    // Update user profile
+    await User.updateUser(userId, { name, address, walletAddress });
+    
+    // Get updated user data
+    const updatedUser = await User.getUserById(userId);
+    
+    res.render('auth/profile', {
+      title: 'Hồ sơ',
+      user: updatedUser,
+      success: 'Thông tin hồ sơ đã được cập nhật thành công'
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    const user = await User.getUserById(req.session.userId);
+    res.status(500).render('auth/profile', {
+      title: 'Hồ sơ',
+      error: 'Đã xảy ra lỗi khi cập nhật hồ sơ',
+      user
+    });
+  }
 };
 
 exports.connectWallet = async (req, res) => {

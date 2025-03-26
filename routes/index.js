@@ -11,4 +11,9 @@ router.get('/', (req, res) => {
   });
 });
 
+// Thêm route test để kiểm tra hình ảnh
+router.get('/image-test', (req, res) => {
+  res.render('image-test', { title: 'Image Test' });
+});
+
 module.exports = router;
