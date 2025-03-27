@@ -160,6 +160,34 @@ class User {
   }
 
   /**
+   * Update user password
+   * @param {string} userId - User ID
+   * @param {string} newPassword - New password
+   * @returns {Promise<boolean>} - Success status
+   */
+  static async updatePassword(userId, newPassword) {
+    try {
+      // Hash new password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      
+      // Update password in database
+      await firebase.firestore()
+        .collection('users')
+        .doc(userId)
+        .update({
+          password: hashedPassword,
+          updatedAt: new Date().toISOString()
+        });
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Verify password
    * @param {string} password - Plain text password
    * @param {string} hashedPassword - Hashed password

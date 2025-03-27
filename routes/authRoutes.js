@@ -53,6 +53,9 @@ router.get('/logout', authController.logout);
 router.get('/profile', isAuthenticated, authController.getProfile);
 router.post('/profile', isAuthenticated, authController.updateProfile);
 
+// Đổi mật khẩu
+router.post('/change-password', isAuthenticated, authController.changePassword);
+
 // Kết nối ví
 router.post('/connect-wallet', isAuthenticated, authController.connectWallet);
 

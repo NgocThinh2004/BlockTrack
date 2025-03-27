@@ -167,6 +167,15 @@ exports.updateProfile = async (req, res) => {
     // Lấy dữ liệu người dùng đã cập nhật
     const updatedUser = await User.getUserById(userId);
     
+    // Cập nhật thông tin người dùng trong session
+    req.session.user = {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      walletAddress: updatedUser.walletAddress
+    };
+    
     res.render('auth/profile', {
       title: 'Hồ sơ',
       user: updatedUser,
@@ -179,6 +188,56 @@ exports.updateProfile = async (req, res) => {
       title: 'Hồ sơ',
       error: 'Đã xảy ra lỗi khi cập nhật hồ sơ',
       user
+    });
+  }
+};
+
+// Thêm chức năng đổi mật khẩu
+exports.changePassword = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    
+    // Kiểm tra người dùng
+    const user = await User.getUserById(userId);
+    if (!user) {
+      return res.redirect('/auth/login');
+    }
+    
+    // Xác thực mật khẩu hiện tại
+    const isPasswordValid = await User.verifyPassword(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.render('auth/profile', {
+        title: 'Hồ sơ',
+        user,
+        passwordError: 'Mật khẩu hiện tại không đúng'
+      });
+    }
+    
+    // Kiểm tra mật khẩu mới và xác nhận mật khẩu
+    if (newPassword !== confirmPassword) {
+      return res.render('auth/profile', {
+        title: 'Hồ sơ',
+        user,
+        passwordError: 'Mật khẩu mới và xác nhận mật khẩu không khớp'
+      });
+    }
+    
+    // Cập nhật mật khẩu mới
+    await User.updatePassword(userId, newPassword);
+    
+    res.render('auth/profile', {
+      title: 'Hồ sơ',
+      user,
+      passwordSuccess: 'Mật khẩu đã được thay đổi thành công'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    const user = await User.getUserById(req.session.userId);
+    res.status(500).render('auth/profile', {
+      title: 'Hồ sơ',
+      user,
+      passwordError: 'Đã xảy ra lỗi khi thay đổi mật khẩu'
     });
   }
 };
