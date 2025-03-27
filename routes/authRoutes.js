@@ -26,6 +26,12 @@ router.get('/login', (req, res) => {
   delete req.session.registeredName;
   delete req.session.registeredEmail;
   delete req.session.registeredRole;
+
+  // Nếu có thông tin về vai trò là producer, distributor, retailer, thì yêu cầu kết nối ví
+  let requireWallet = false;
+  if (registeredRole && registeredRole !== 'consumer') {
+    requireWallet = true;
+  }
   
   res.render('auth/login', { 
     title: 'Đăng nhập', 
@@ -33,7 +39,9 @@ router.get('/login', (req, res) => {
     registerSuccess,
     registeredName,
     registeredEmail,
-    registeredRole
+    registeredRole,
+    requireWallet,
+    userRole: registeredRole
   });
 });
 router.post('/login', authController.login);

@@ -55,7 +55,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, walletAddress } = req.body;
     
     // Find user
     const user = await User.getUserByEmail(email);
@@ -73,6 +73,32 @@ exports.login = async (req, res) => {
         title: 'Đăng nhập',
         error: 'Email hoặc mật khẩu không đúng'
       });
+    }
+    
+    // Kiểm tra xem có cần xác thực ví MetaMask không (cho vai trò khác consumer)
+    if (user.role !== 'consumer') {
+      // Nếu người dùng là producer, distributor hoặc retailer, bắt buộc phải xác thực ví
+      if (!walletAddress) {
+        return res.status(401).render('auth/login', {
+          title: 'Đăng nhập',
+          error: 'Vui lòng kết nối ví MetaMask để đăng nhập',
+          requireWallet: true,
+          userRole: user.role,
+          email
+        });
+      }
+      
+      // Kiểm tra xem địa chỉ ví có trùng khớp không
+      if (user.walletAddress && walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
+        return res.status(401).render('auth/login', {
+          title: 'Đăng nhập',
+          error: 'Địa chỉ ví không khớp với tài khoản đã đăng ký',
+          requireWallet: true,
+          userRole: user.role,
+          email,
+          walletMismatch: true
+        });
+      }
     }
     
     // Store user in session
@@ -133,25 +159,12 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.session.userId;
-    const { name, address, walletAddress } = req.body;
+    const { name, address } = req.body;
     
-    // If wallet address is provided, check if it's already linked to another account
-    if (walletAddress) {
-      const existingUserWithWallet = await User.getUserByWalletAddress(walletAddress);
-      if (existingUserWithWallet && existingUserWithWallet.id !== userId) {
-        const user = await User.getUserById(userId);
-        return res.status(400).render('auth/profile', {
-          title: 'Hồ sơ',
-          error: 'Địa chỉ ví đã được liên kết với tài khoản khác',
-          user
-        });
-      }
-    }
+    // Cập nhật thông tin người dùng (không cho phép cập nhật walletAddress)
+    await User.updateUser(userId, { name, address });
     
-    // Update user profile
-    await User.updateUser(userId, { name, address, walletAddress });
-    
-    // Get updated user data
+    // Lấy dữ liệu người dùng đã cập nhật
     const updatedUser = await User.getUserById(userId);
     
     res.render('auth/profile', {
