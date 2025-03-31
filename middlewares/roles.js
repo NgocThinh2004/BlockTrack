@@ -1,4 +1,3 @@
-
 /**
  * Middleware kiểm tra vai trò người dùng
  * - Phân quyền truy cập theo vai trò
@@ -9,6 +8,12 @@ exports.isProducer = (req, res, next) => {
   if (req.user && req.user.role === 'producer') {
     next();
   } else {
+    // Add debugging to help troubleshoot
+    console.log('Role check failed', {
+      hasUser: !!req.user,
+      role: req.user ? req.user.role : 'no user'
+    });
+    
     res.status(403).render('error', {
       message: 'Chỉ nhà sản xuất mới có quyền truy cập tính năng này',
       title: 'Lỗi quyền truy cập'
