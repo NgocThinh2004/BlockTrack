@@ -34,19 +34,6 @@
             </div>
           <% } %>
           
-          <% if (locals.requireWallet && locals.userRole) { %>
-            <div class="alert alert-warning wallet-required">
-              <i class="fas fa-wallet me-2"></i>
-              <strong>Kết nối ví MetaMask bắt buộc!</strong> Vai trò <u><%= userRole %></u> yêu cầu xác thực địa chỉ ví để đăng nhập.
-              <% if (locals.walletMismatch) { %>
-                <hr>
-                <p class="mb-0 text-danger">
-                  <i class="fas fa-exclamation-triangle me-1"></i> Địa chỉ ví MetaMask không khớp với tài khoản này. Vui lòng kết nối đúng ví đã đăng ký.
-                </p>
-              <% } %>
-            </div>
-          <% } %>
-          
           <form id="loginForm" action="/auth/login" method="POST">
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
@@ -58,7 +45,7 @@
               </div>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-4">
               <label for="password" class="form-label">Mật khẩu</label>
               <div class="input-group">
                 <span class="input-group-text">
@@ -71,18 +58,8 @@
               </div>
             </div>
             
-            <div class="mb-4">
-              <label for="connectMetaMask" class="form-label d-flex justify-content-between">
-                <span>Kết nối ví MetaMask <% if (locals.requireWallet) { %><span class="text-danger">*</span><% } %></span>
-              </label>
-              <button type="button" id="connectMetaMask" class="btn <%= locals.walletMismatch ? 'btn-danger wallet-mismatch' : 'btn-outline-primary' %> w-100">
-                <i class="fas fa-wallet me-2"></i> <%= locals.walletMismatch ? 'Địa chỉ ví không đúng! Kết nối lại' : 'Kết nối ví MetaMask' %>
-              </button>
-              <small id="walletStatus" class="form-text text-muted d-none mt-1">
-                Đã kết nối: <span id="walletAddress"></span>
-              </small>
-              <input type="hidden" id="walletAddressInput" name="walletAddress">
-            </div>
+            <!-- Wallet address will be sent as hidden field for backend verification -->
+            <input type="hidden" id="walletAddressInput" name="walletAddress" value="">
             
             <div class="d-grid gap-2">
               <button type="submit" id="loginButton" class="btn btn-primary btn-lg">Đăng nhập</button>
@@ -98,15 +75,8 @@
   </div>
 </div>
 
-<!-- ...existing script code... -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const connectMetaMaskBtn = document.getElementById('connectMetaMask');
-    const walletStatus = document.getElementById('walletStatus');
-    const walletAddressSpan = document.getElementById('walletAddress');
-    const walletAddressInput = document.getElementById('walletAddressInput');
-    const loginButton = document.getElementById('loginButton');
-    const requireWallet = <%= locals.requireWallet ? 'true' : 'false' %>;
     const togglePasswordBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
     
@@ -119,64 +89,23 @@
         this.querySelector('i').classList.toggle('fa-eye-slash');
       });
     }
-    
-    // Disable login button if wallet is required but not connected
-    if (requireWallet) {
-      loginButton.disabled = true;
-      loginButton.innerHTML = '<i class="fas fa-wallet me-2"></i> Kết nối ví để đăng nhập';
-    }
 
-    connectMetaMaskBtn.addEventListener('click', async function() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          // Reset UI state
-          connectMetaMaskBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Đang kết nối...';
-          
-          const accounts = await ethereum.request({
-            method: 'eth_requestAccounts'
-          });
-          
-          if (accounts.length > 0) {
-            const address = accounts[0];
-            walletAddressSpan.textContent = `${address.slice(0, 6)}...${address.slice(-4)}`;
-            walletAddressInput.value = address;
-            walletStatus.classList.remove('d-none');
-            
-            connectMetaMaskBtn.classList.remove('btn-outline-primary');
-            connectMetaMaskBtn.classList.remove('btn-danger');
-            connectMetaMaskBtn.classList.remove('wallet-mismatch');
-            connectMetaMaskBtn.classList.add('btn-success');
-            connectMetaMaskBtn.innerHTML = '<i class="fas fa-check me-2"></i> Ví đã kết nối';
-            
-            if (requireWallet) {
-              loginButton.disabled = false;
-              loginButton.innerHTML = 'Đăng nhập';
-              loginButton.classList.add('btn-pulse');
-              setTimeout(() => loginButton.classList.remove('btn-pulse'), 2000);
-            }
-          }
-        } catch (error) {
-          console.error('Lỗi kết nối MetaMask:', error);
-          connectMetaMaskBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Lỗi kết nối';
-          setTimeout(() => {
-            connectMetaMaskBtn.innerHTML = '<i class="fas fa-wallet me-2"></i> Kết nối ví MetaMask';
-          }, 2000);
-          alert('Không thể kết nối với MetaMask. Vui lòng thử lại.');
+    // Check for wallet disconnection flag from logout
+    const checkForDisconnectFlag = () => {
+      // Clear any stored wallet data
+      if (document.cookie.match(/(^|;)\s*wallet_disconnected=([^;]+)/)) {
+        document.cookie = "wallet_disconnected=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        
+        // Clear any stored connection state
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('walletConnected');
+          localStorage.removeItem('walletAddress');
+          localStorage.removeItem('prevLoginUser');
         }
-      } else {
-        alert('Bạn cần cài đặt MetaMask để sử dụng tính năng này.');
-        window.open('https://metamask.io/download.html', '_blank');
       }
-    });
+    };
     
-    const loginForm = document.getElementById('loginForm');
-    loginForm.addEventListener('submit', function(event) {
-      if (requireWallet && !walletAddressInput.value) {
-        event.preventDefault();
-        connectMetaMaskBtn.classList.add('shake-animation');
-        setTimeout(() => connectMetaMaskBtn.classList.remove('shake-animation'), 820);
-        alert('Vui lòng kết nối ví MetaMask để đăng nhập với vai trò này.');
-      }
-    });
+    // Run disconnect check when page loads
+    checkForDisconnectFlag();
   });
 </script>

@@ -34,7 +34,7 @@
                 <span class="text-muted"><%= user.address %></span>
               </li>
             <% } %>
-            <% if (user.walletAddress) { %>
+            <% if (user.walletAddress && user.role !== 'consumer') { %>
               <li class="list-group-item">
                 <div class="d-flex justify-content-between align-items-center">
                   <span><i class="fas fa-wallet me-2"></i> Ví Blockchain</span>
@@ -82,24 +82,18 @@
               <textarea class="form-control" id="address" name="address" rows="3"><%= user.address || '' %></textarea>
             </div>
             
+            <% if (user.role !== 'consumer') { %>
             <div class="mb-4">
               <label class="form-label">Ví Blockchain</label>
               <% if (user.walletAddress) { %>
-                <div class="input-group">
-                  <input type="text" class="form-control" value="<%= user.walletAddress %>" disabled>
-                  <button type="button" class="btn btn-success" disabled>
-                    <i class="fas fa-check me-2"></i> Đã kết nối
-                  </button>
-                </div>
-                <small class="text-muted mt-1 d-block">
-                  <i class="fas fa-info-circle me-1"></i> Địa chỉ ví đã được kết nối khi đăng nhập và không thể thay đổi
-                </small>
+                <input type="text" class="form-control" value="<%= user.walletAddress %>" disabled>
               <% } else { %>
                 <div class="alert alert-info">
                   <i class="fas fa-info-circle me-2"></i> Bạn cần đăng nhập lại để kết nối ví MetaMask.
                 </div>
               <% } %>
             </div>
+            <% } %>
             
             <div class="d-flex justify-content-end">
               <button type="submit" class="btn btn-primary">

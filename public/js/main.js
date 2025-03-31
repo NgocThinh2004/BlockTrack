@@ -189,6 +189,16 @@ function connectMetaMask(button, callback) {
           if (typeof callback === 'function') {
             callback(address);
           }
+          
+          // Check if requireWallet is true and enable login button
+          const requireWallet = document.querySelector('#requireWallet');
+          if (requireWallet && requireWallet.value === 'true') {
+            const loginButton = document.querySelector('#loginButton');
+            if (loginButton) {
+              loginButton.removeAttribute('disabled');
+              loginButton.innerHTML = 'Đăng nhập';
+            }
+          }
         }
       })
       .catch(error => {
@@ -207,6 +217,63 @@ function connectMetaMask(button, callback) {
     alert('MetaMask is not installed. Please install MetaMask to use this feature.');
     window.open('https://metamask.io/download/', '_blank');
   }
+}
+
+/**
+ * Disconnect wallet and clear connection data
+ * @returns {boolean} - Return true to allow default link action
+ */
+function disconnectWallet() {
+  console.log('Disconnecting wallet on logout');
+  
+  // Clear any wallet-related data from storage
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('walletConnected');
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('prevLoginUser');
+    
+    // Clear any other wallet-related data
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.includes('wallet') || key.includes('metamask') || key.includes('ethereum')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  }
+  
+  // Remove session storage wallet data
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem('walletConnected');
+    sessionStorage.removeItem('walletAddress');
+  }
+  
+  // Try to "forget" this connection in MetaMask
+  if (window.ethereum) {
+    try {
+      // Remove all event listeners to reset state
+      ethereum.removeAllListeners?.();
+      
+      // Force a reload of the ethereum provider if possible
+      if (ethereum.disconnect || ethereum._handleDisconnect) {
+        try {
+          ethereum.disconnect?.();
+          ethereum._handleDisconnect?.();
+        } catch (e) {
+          console.log('Provider does not support disconnect method');
+        }
+      }
+    } catch (e) {
+      console.error('Error disconnecting wallet:', e);
+    }
+  }
+  
+  // Set a flag in the cookie to indicate wallet was disconnected
+  document.cookie = "wallet_disconnected=true; path=/; max-age=300"; // 5 minutes expiry
+  
+  // Return true to allow the default link behavior (redirect to logout)
+  return true;
 }
 
 /**

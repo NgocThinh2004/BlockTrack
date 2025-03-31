@@ -2,30 +2,166 @@ const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
 
 /**
- * Controller xử lý các chức năng xác thực người dùng
+ * Controller xử lý xác thực người dùng
  */
-exports.register = async (req, res) => {
+exports.getLogin = (req, res) => {
+  // Determine if we're pre-checking a role from query param 
+  const roleFromQuery = req.query.role;
+  const requireWallet = roleFromQuery && ['producer', 'distributor', 'retailer'].includes(roleFromQuery);
+  
+  res.render('auth/login', {
+    title: 'Đăng nhập',
+    error: req.query.error || null,
+    redirectToLogin: false,
+    requireWallet: requireWallet,
+    userRole: roleFromQuery
+  });
+};
+
+/**
+ * Handle user login
+ */
+exports.postLogin = async (req, res) => {
   try {
-    const { name, email, password, role, address, walletAddress } = req.body;
+    const { email, password, walletAddress } = req.body;
     
-    // Check if user already exists
-    const existingUser = await User.getUserByEmail(email);
-    if (existingUser) {
-      return res.status(400).render('auth/register', { 
-        error: 'Email đã được sử dụng bởi tài khoản khác',
-        formData: req.body,
-        title: 'Đăng ký tài khoản'
+    console.log(`Login attempt for email: ${email}, wallet provided: ${walletAddress ? 'yes' : 'no'}`);
+    
+    if (!email || !password) {
+      return res.render('auth/login', {
+        title: 'Đăng nhập',
+        error: 'Vui lòng nhập email và mật khẩu',
+        email
       });
     }
     
-    // Check if wallet address already exists (if provided)
+    // Find user by email
+    const user = await User.getUserByEmail(email);
+    
+    if (!user) {
+      console.log(`Login failed: User with email ${email} not found`);
+      return res.render('auth/login', {
+        title: 'Đăng nhập',
+        error: 'Email hoặc mật khẩu không chính xác',
+        email
+      });
+    }
+    
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    
+    if (!isMatch) {
+      console.log(`Login failed: Incorrect password for ${email}`);
+      return res.render('auth/login', {
+        title: 'Đăng nhập',
+        error: 'Email hoặc mật khẩu không chính xác',
+        email
+      });
+    }
+    
+    // Check if wallet is required based on role
+    const requiresWallet = user.role === 'producer' || user.role === 'distributor' || user.role === 'retailer';
+    
+    // If wallet is required and address was provided, verify it matches
+    if (requiresWallet && user.walletAddress && walletAddress) {
+      if (walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
+        console.log(`Login failed: Wallet address mismatch for ${email}`);
+        return res.render('auth/login', {
+          title: 'Đăng nhập',
+          error: 'Địa chỉ ví không khớp với tài khoản đã đăng ký',
+          requireWallet: true,
+          userRole: user.role,
+          email,
+          walletMismatch: true,
+          registeredWalletAddress: `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
+        });
+      }
+      
+      console.log(`Wallet verification successful for ${email}`);
+    }
+    
+    // Check if this is a different user than the last login
+    const lastUser = req.cookies.last_user;
+    const userChanged = lastUser && lastUser !== email;
+    
+    if (userChanged) {
+      console.log(`Different user login detected: last=${lastUser}, current=${email}`);
+      // The client-side code should handle wallet reconnection based on the wallet_disconnected cookie
+    }
+    
+    // Login successful, store user in session
+    req.session.userId = user.id;
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email.toLowerCase(),
+      role: user.role,
+      walletAddress: user.walletAddress
+    };
+    
+    console.log(`Login successful for ${email}`);
+    
+    // After successful login, update last user cookie
+    res.cookie('last_user', email, {
+      maxAge: 86400000, // 24 hours
+      httpOnly: false
+    });
+    
+    // Redirect based on role
+    if (user.role === 'producer') {
+      res.redirect('/dashboard/producer');
+    } else if (user.role === 'distributor') {
+      res.redirect('/dashboard/distributor');
+    } else if (user.role === 'retailer') {
+      res.redirect('/dashboard/retailer');
+    } else {
+      res.redirect('/');
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).render('auth/login', { 
+      title: 'Đăng nhập',
+      error: 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.'
+    });
+  }
+};
+
+/**
+ * Handle user registration
+ */
+exports.postRegister = async (req, res) => {
+  try {
+    const { name, email, password, passwordConfirm, role, address, walletAddress } = req.body;
+    
+    // Basic validation
+    if (password !== passwordConfirm) {
+      return res.status(400).render('auth/register', {
+        title: 'Đăng ký tài khoản',
+        error: 'Mật khẩu xác nhận không khớp',
+        formData: req.body
+      });
+    }
+    
+    // Check if email exists
+    const emailExists = await User.emailExists(email);
+    if (emailExists) {
+      console.log(`Registration failed: Email ${email} already exists`);
+      return res.status(400).render('auth/register', {
+        title: 'Đăng ký tài khoản',
+        error: 'Email đã được sử dụng bởi tài khoản khác',
+        formData: req.body
+      });
+    }
+    
+    // Check if wallet exists if provided
     if (walletAddress) {
-      const existingUserWithWallet = await User.getUserByWalletAddress(walletAddress);
-      if (existingUserWithWallet) {
-        return res.status(400).render('auth/register', { 
+      const walletExists = await User.walletExists(walletAddress);
+      if (walletExists) {
+        console.log(`Registration failed: Wallet address ${walletAddress} already exists`);
+        return res.status(400).render('auth/register', {
+          title: 'Đăng ký tài khoản',
           error: 'Địa chỉ ví đã được liên kết với tài khoản khác',
-          formData: req.body,
-          title: 'Đăng ký tài khoản'
+          formData: req.body
         });
       }
     }
@@ -35,7 +171,7 @@ exports.register = async (req, res) => {
       name, email, password, role, address, walletAddress
     });
     
-    // Save registration info to session for login page
+    // Store registration info in session
     req.session.registerSuccess = true;
     req.session.registeredName = newUser.name;
     req.session.registeredEmail = newUser.email;
@@ -45,7 +181,7 @@ exports.register = async (req, res) => {
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).render('auth/register', { 
+    res.status(500).render('auth/register', {
       title: 'Đăng ký tài khoản',
       error: 'Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại sau.',
       formData: req.body
@@ -53,80 +189,21 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
-  try {
-    const { email, password, walletAddress } = req.body;
-    
-    // Find user
-    const user = await User.getUserByEmail(email);
-    if (!user) {
-      return res.status(401).render('auth/login', {
-        title: 'Đăng nhập',
-        error: 'Email hoặc mật khẩu không đúng'
-      });
-    }
-    
-    // Verify password
-    const passwordValid = await User.verifyPassword(password, user.password);
-    if (!passwordValid) {
-      return res.status(401).render('auth/login', {
-        title: 'Đăng nhập',
-        error: 'Email hoặc mật khẩu không đúng'
-      });
-    }
-    
-    // Kiểm tra xem có cần xác thực ví MetaMask không (cho vai trò khác consumer)
-    if (user.role !== 'consumer') {
-      // Nếu người dùng là producer, distributor hoặc retailer, bắt buộc phải xác thực ví
-      if (!walletAddress) {
-        return res.status(401).render('auth/login', {
-          title: 'Đăng nhập',
-          error: 'Vui lòng kết nối ví MetaMask để đăng nhập',
-          requireWallet: true,
-          userRole: user.role,
-          email
-        });
-      }
-      
-      // Kiểm tra xem địa chỉ ví có trùng khớp không
-      if (user.walletAddress && walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
-        return res.status(401).render('auth/login', {
-          title: 'Đăng nhập',
-          error: 'Địa chỉ ví không khớp với tài khoản đã đăng ký',
-          requireWallet: true,
-          userRole: user.role,
-          email,
-          walletMismatch: true
-        });
-      }
-    }
-    
-    // Store user in session
-    req.session.userId = user.id;
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      walletAddress: user.walletAddress
-    };
-    
-    // Redirect based on role
-    if (user.role === 'producer' || user.role === 'distributor' || user.role === 'retailer') {
-      res.redirect('/dashboard');
-    } else {
-      res.redirect('/');
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).render('auth/login', {
-      title: 'Đăng nhập',
-      error: 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.'
+exports.logout = (req, res) => {
+  // Set a flag in the response cookie to indicate wallet should disconnect
+  res.cookie('wallet_disconnected', 'true', { 
+    maxAge: 5000, // Short-lived cookie, just for the redirect
+    httpOnly: false // Make it accessible to client-side JS
+  });
+  
+  // Store last user email in a separate cookie to detect user changes
+  if (req.session.user && req.session.user.email) {
+    res.cookie('last_user', req.session.user.email, {
+      maxAge: 86400000, // 24 hours
+      httpOnly: false
     });
   }
-};
-
-exports.logout = (req, res) => {
+  
   req.session.destroy((err) => {
     if (err) {
       console.error('Error destroying session:', err);
@@ -186,8 +263,8 @@ exports.updateProfile = async (req, res) => {
     const user = await User.getUserById(req.session.userId);
     res.status(500).render('auth/profile', {
       title: 'Hồ sơ',
-      error: 'Đã xảy ra lỗi khi cập nhật hồ sơ',
-      user
+      user,
+      error: 'Đã xảy ra lỗi khi cập nhật hồ sơ'
     });
   }
 };
@@ -198,23 +275,25 @@ exports.changePassword = async (req, res) => {
     const userId = req.session.userId;
     const { currentPassword, newPassword, confirmPassword } = req.body;
     
-    // Kiểm tra người dùng
+    // Get user data
     const user = await User.getUserById(userId);
+    
     if (!user) {
       return res.redirect('/auth/login');
     }
     
     // Xác thực mật khẩu hiện tại
-    const isPasswordValid = await User.verifyPassword(currentPassword, user.password);
-    if (!isPasswordValid) {
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    
+    if (!isMatch) {
       return res.render('auth/profile', {
         title: 'Hồ sơ',
         user,
-        passwordError: 'Mật khẩu hiện tại không đúng'
+        passwordError: 'Mật khẩu hiện tại không chính xác'
       });
     }
     
-    // Kiểm tra mật khẩu mới và xác nhận mật khẩu
+    // Kiểm tra mật khẩu mới và xác nhận khớp nhau
     if (newPassword !== confirmPassword) {
       return res.render('auth/profile', {
         title: 'Hồ sơ',
