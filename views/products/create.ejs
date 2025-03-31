@@ -1,55 +1,86 @@
 <div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/products">Sản phẩm</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Tạo mới</li>
+    </ol>
+  </nav>
+  
   <div class="row">
     <div class="col-md-10 mx-auto">
-      <h2 class="mb-4">Tạo sản phẩm mới</h2>
-      
       <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="mb-0">Tạo sản phẩm mới</h3>
+        </div>
         <div class="card-body">
-          <form action="/products/create" method="POST">
+          <% if (locals.error) { %>
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle me-2"></i> <%= error %>
+            </div>
+          <% } %>
+          
+          <form action="/products/create" method="POST" class="needs-validation" novalidate>
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="name" class="form-label">Tên sản phẩm</label>
-                <input type="text" class="form-control" id="name" name="name" required>
+                <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" value="<%= locals.formData ? formData.name : '' %>" required>
+                <div class="invalid-feedback">Vui lòng nhập tên sản phẩm</div>
               </div>
               
               <div class="col-md-6 mb-3">
-                <label for="manufacturer" class="form-label">Nhà sản xuất</label>
-                <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
+                <label for="manufacturer" class="form-label">Nhà sản xuất <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="manufacturer" name="manufacturer" value="<%= locals.formData ? formData.manufacturer : '' %>" required>
+                <div class="invalid-feedback">Vui lòng nhập tên nhà sản xuất</div>
               </div>
             </div>
             
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="origin" class="form-label">Xuất xứ</label>
-                <input type="text" class="form-control" id="origin" name="origin" required>
+                <label for="origin" class="form-label">Xuất xứ <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="origin" name="origin" value="<%= locals.formData ? formData.origin : '' %>" required>
+                <div class="invalid-feedback">Vui lòng nhập xuất xứ sản phẩm</div>
               </div>
               
               <div class="col-md-6 mb-3">
                 <label for="batchNumber" class="form-label">Số lô</label>
-                <input type="text" class="form-control" id="batchNumber" name="batchNumber">
+                <input type="text" class="form-control" id="batchNumber" name="batchNumber" value="<%= locals.formData ? formData.batchNumber : '' %>">
               </div>
             </div>
             
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="productionDate" class="form-label">Ngày sản xuất</label>
-                <input type="date" class="form-control" id="productionDate" name="productionDate" required>
+                <label for="productionDate" class="form-label">Ngày sản xuất <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="productionDate" name="productionDate" value="<%= locals.formData && formData.productionDate ? formData.productionDate : new Date().toISOString().split('T')[0] %>" required>
+                <div class="invalid-feedback">Vui lòng chọn ngày sản xuất</div>
               </div>
               
               <div class="col-md-6 mb-3">
                 <label for="expiryDate" class="form-label">Hạn sử dụng</label>
-                <input type="date" class="form-control" id="expiryDate" name="expiryDate">
+                <input type="date" class="form-control" id="expiryDate" name="expiryDate" value="<%= locals.formData && formData.expiryDate ? formData.expiryDate : '' %>">
+                <div class="form-text">Để trống nếu sản phẩm không có hạn sử dụng</div>
               </div>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-4">
               <label for="description" class="form-label">Mô tả sản phẩm</label>
-              <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+              <textarea class="form-control" id="description" name="description" rows="4"><%= locals.formData ? formData.description : '' %></textarea>
+            </div>
+            
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="agreeBlockchain" name="agreeBlockchain" required>
+                <label class="form-check-label" for="agreeBlockchain">
+                  Tôi đồng ý lưu thông tin sản phẩm này trên blockchain để đảm bảo tính minh bạch và truy xuất nguồn gốc
+                </label>
+                <div class="invalid-feedback">Bạn cần đồng ý với điều khoản này để tiếp tục</div>
+              </div>
             </div>
             
             <div class="mt-4 d-flex justify-content-between">
               <a href="/products" class="btn btn-secondary">Hủy</a>
-              <button type="submit" class="btn btn-primary">Tạo sản phẩm</button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i> Tạo sản phẩm
+              </button>
             </div>
           </form>
         </div>
@@ -59,9 +90,32 @@
 </div>
 
 <script>
-  // Set default production date to today
   document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('productionDate').value = today;
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+    
+    // Set min date for production date to current date minus 1 year
+    const productionDateInput = document.getElementById('productionDate');
+    if (productionDateInput) {
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      productionDateInput.min = oneYearAgo.toISOString().split('T')[0];
+    }
+    
+    // Set min date for expiry date to current date
+    const expiryDateInput = document.getElementById('expiryDate');
+    if (expiryDateInput) {
+      const today = new Date();
+      expiryDateInput.min = today.toISOString().split('T')[0];
+    }
   });
 </script>

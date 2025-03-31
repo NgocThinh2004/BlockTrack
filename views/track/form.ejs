@@ -93,11 +93,15 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode@2.0.9/dist/html5-qrcode.min.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const openQRScannerBtn = document.getElementById('openQRScanner');
     const closeQRScannerBtn = document.getElementById('closeQRScanner');
     const qrReaderDiv = document.getElementById('qr-reader');
+    const qrReaderContainer = document.getElementById('qr-reader-container');
+    
+    let html5QrCode;
     
     openQRScannerBtn.addEventListener('click', function() {
       qrReaderDiv.classList.remove('d-none');
@@ -106,21 +110,38 @@
     
     closeQRScannerBtn.addEventListener('click', function() {
       qrReaderDiv.classList.add('d-none');
-      // Stop camera if needed
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(err => console.error(err));
+      }
     });
     
     function initQRScanner() {
-      if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-        alert('Để quét mã QR, vui lòng cho phép truy cập camera.');
-        // In a real app, you would initialize a QR scanner library here
-        // Example: Html5Qrcode.start('qr-reader-container', config, qrCodeSuccessCallback, qrCodeErrorCallback);
-      } else {
-        alert('Thiết bị của bạn không hỗ trợ quét mã QR. Vui lòng nhập mã sản phẩm thủ công.');
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("qr-reader-container");
       }
-    }
-    
-    function handleQRCodeScan(productId) {
-      window.location.href = '/track/' + productId;
+      
+      const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+        console.log(`QR Code detected: ${decodedText}`);
+        html5QrCode.stop().then(() => {
+          qrReaderDiv.classList.add('d-none');
+          window.location.href = `/track/${decodedText}`;
+        }).catch((err) => {
+          console.log("Error stopping camera:", err);
+        });
+      };
+      
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      
+      html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+        .catch((err) => {
+          console.log("Error starting camera:", err);
+          qrReaderContainer.innerHTML = `
+            <div class="alert alert-warning m-3">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Không thể kết nối với camera. Vui lòng kiểm tra quyền truy cập camera hoặc sử dụng thiết bị khác.
+            </div>
+          `;
+        });
     }
   });
 </script>

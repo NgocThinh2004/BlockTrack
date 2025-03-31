@@ -3,17 +3,49 @@
     <h2>Danh sách sản phẩm</h2>
     <% if (locals.user && locals.user.role === 'producer') { %>
       <a href="/products/create" class="btn btn-success">
-        <i class="fas fa-plus me-1"></i> Thêm sản phẩm mới
+        <i class="fas fa-plus me-1"></i> Tạo sản phẩm mới
       </a>
     <% } %>
   </div>
 
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <div class="row">
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="searchProduct" placeholder="Tìm kiếm sản phẩm...">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="filterStage">
+            <option value="">Tất cả giai đoạn</option>
+            <option value="production">Sản xuất</option>
+            <option value="packaging">Đóng gói</option>
+            <option value="distribution">Vận chuyển</option>
+            <option value="retail">Bán lẻ</option>
+            <option value="sold">Đã bán</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="sortBy">
+            <option value="createdAt">Ngày tạo</option>
+            <option value="name">Tên sản phẩm</option>
+            <option value="manufacturer">Nhà sản xuất</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-outline-primary w-100" id="applyFilters">
+            <i class="fas fa-filter me-1"></i> Lọc
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <% if (products && products.length > 0) { %>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
       <% products.forEach(product => { %>
         <div class="col">
-          <div class="card h-100 shadow-sm">
-            <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between">
               <span class="badge bg-<%= 
                 product.currentStage === 'production' ? 'primary' : 
                 product.currentStage === 'packaging' ? 'info' : 
@@ -66,3 +98,48 @@
     </div>
   <% } %>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Lọc sản phẩm
+    const searchField = document.getElementById('searchProduct');
+    const stageFilter = document.getElementById('filterStage');
+    const sortOption = document.getElementById('sortBy');
+    const filterButton = document.getElementById('applyFilters');
+    
+    if (filterButton) {
+      filterButton.addEventListener('click', function() {
+        let url = new URL(window.location);
+        
+        // Thêm tham số tìm kiếm
+        if (searchField && searchField.value) {
+          url.searchParams.set('search', searchField.value);
+        } else {
+          url.searchParams.delete('search');
+        }
+        
+        // Thêm tham số lọc theo giai đoạn
+        if (stageFilter && stageFilter.value) {
+          url.searchParams.set('stage', stageFilter.value);
+        } else {
+          url.searchParams.delete('stage');
+        }
+        
+        // Thêm tham số sắp xếp
+        if (sortOption && sortOption.value) {
+          url.searchParams.set('sort', sortOption.value);
+        } else {
+          url.searchParams.delete('sort');
+        }
+        
+        window.location.href = url.toString();
+      });
+    }
+    
+    // Khởi tạo các giá trị từ URL hiện tại
+    const urlParams = new URLSearchParams(window.location.search);
+    if (searchField) searchField.value = urlParams.get('search') || '';
+    if (stageFilter) stageFilter.value = urlParams.get('stage') || '';
+    if (sortOption) sortOption.value = urlParams.get('sort') || 'createdAt';
+  });
+</script>
