@@ -47,8 +47,13 @@ exports.postLogin = async (req, res) => {
       });
     }
     
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Compare password - Fix: Ensure we're properly handling async bcrypt compare
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(password, user.password);
+    } catch (err) {
+      console.error('Password comparison error:', err);
+    }
     
     if (!isMatch) {
       console.log(`Login failed: Incorrect password for ${email}`);
@@ -80,15 +85,6 @@ exports.postLogin = async (req, res) => {
       console.log(`Wallet verification successful for ${email}`);
     }
     
-    // Check if this is a different user than the last login
-    const lastUser = req.cookies.last_user;
-    const userChanged = lastUser && lastUser !== email;
-    
-    if (userChanged) {
-      console.log(`Different user login detected: last=${lastUser}, current=${email}`);
-      // The client-side code should handle wallet reconnection based on the wallet_disconnected cookie
-    }
-    
     // Login successful, store user in session
     req.session.userId = user.id;
     req.session.user = {
@@ -101,21 +97,15 @@ exports.postLogin = async (req, res) => {
     
     console.log(`Login successful for ${email}`);
     
-    // After successful login, update last user cookie
-    res.cookie('last_user', email, {
-      maxAge: 86400000, // 24 hours
-      httpOnly: false
-    });
-    
-    // Redirect based on role
+    // Redirect directly without waiting for session save
     if (user.role === 'producer') {
-      res.redirect('/dashboard/producer');
+      return res.redirect('/dashboard/producer');
     } else if (user.role === 'distributor') {
-      res.redirect('/dashboard/distributor');
+      return res.redirect('/dashboard/distributor');
     } else if (user.role === 'retailer') {
-      res.redirect('/dashboard/retailer');
+      return res.redirect('/dashboard/retailer');
     } else {
-      res.redirect('/');
+      return res.redirect('/');
     }
   } catch (error) {
     console.error('Login error:', error);

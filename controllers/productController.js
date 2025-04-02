@@ -75,8 +75,42 @@ exports.showCreateForm = (req, res) => {
   res.render('products/create', { title: 'Tạo sản phẩm mới' });
 };
 
-exports.createProduct = (req, res) => {
-  res.redirect('/products/product-new');
+exports.createProduct = async (req, res) => {
+  try {
+    // Lấy dữ liệu từ form
+    const productData = {
+      name: req.body.name,
+      manufacturer: req.body.manufacturer,
+      origin: req.body.origin,
+      description: req.body.description,
+      batchNumber: req.body.batchNumber,
+      productionDate: req.body.productionDate,
+      expiryDate: req.body.expiryDate,
+      ownerId: req.user.id // Lấy từ req.user nhờ middleware loadUser
+    };
+    
+    // Kiểm tra dữ liệu
+    if (!productData.name || !productData.manufacturer || !productData.origin || !productData.productionDate) {
+      return res.render('products/create', { 
+        error: 'Vui lòng điền đầy đủ thông tin bắt buộc',
+        formData: productData,
+        title: 'Tạo sản phẩm mới'
+      });
+    }
+    
+    // Tạo sản phẩm và lưu vào database + blockchain
+    const product = await Product.createProduct(productData);
+    
+    // Chuyển hướng đến trang chi tiết sản phẩm
+    res.redirect(`/products/${product.id}`);
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.render('products/create', {
+      error: 'Có lỗi xảy ra khi tạo sản phẩm. Vui lòng thử lại.',
+      formData: req.body,
+      title: 'Tạo sản phẩm mới'
+    });
+  }
 };
 
 exports.showEditForm = (req, res) => {
@@ -101,6 +135,70 @@ exports.showEditForm = (req, res) => {
     title: 'Chỉnh sửa: ' + product.name,
     product 
   });
+};
+
+exports.editProductPage = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Kiểm tra quyền sở hữu
+    if (product.ownerId !== req.session.userId) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền chỉnh sửa sản phẩm này' 
+      });
+    }
+    
+    // Kiểm tra trạng thái blockchain - không cho phép chỉnh sửa nếu đã có trên blockchain
+    if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+      return res.status(403).render('error', { 
+        message: 'Không thể chỉnh sửa sản phẩm đã được xác thực trên blockchain',
+        error: {
+          status: 403,
+          stack: 'Sản phẩm đã được lưu trên blockchain không thể sửa đổi để đảm bảo tính toàn vẹn dữ liệu.'
+        }
+      });
+    }
+    
+    res.render('products/edit', { product, title: `Chỉnh sửa ${product.name}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateProduct = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    // Kiểm tra sản phẩm tồn tại
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Kiểm tra quyền sở hữu
+    if (product.ownerId !== req.session.userId) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền chỉnh sửa sản phẩm này' 
+      });
+    }
+    
+    // Kiểm tra trạng thái blockchain - không cho phép chỉnh sửa nếu đã có trên blockchain
+    if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+      return res.status(403).render('error', { 
+        message: 'Không thể chỉnh sửa sản phẩm đã được xác thực trên blockchain' 
+      });
+    }
+    
+    // Nếu tất cả kiểm tra OK, tiếp tục với việc cập nhật
+    // ...existing code for updating product...
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.updateProduct = (req, res) => {

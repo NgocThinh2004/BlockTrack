@@ -1,35 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/dashboardController');
-const { isAuthenticated, loadUser } = require('../middlewares/auth');
-const { isProducer, isDistributor, isRetailer } = require('../middlewares/roles');
+const { isAuthenticated } = require('../middlewares/auth');
 
-/**
- * Routes xử lý dashboard cho từng vai trò
- */
+// Apply authentication middleware
+router.use(isAuthenticated);
 
-// Điều hướng dựa trên vai trò
-router.get('/', isAuthenticated, loadUser, (req, res) => {
-  const role = req.user ? req.user.role : null; 
+// Dashboard routes by role
+router.get('/producer', dashboardController.getProducerDashboard);
+router.get('/distributor', dashboardController.getDistributorDashboard);
+router.get('/retailer', dashboardController.getRetailerDashboard);
+
+// Default dashboard route
+router.get('/', (req, res) => {
+  // Get user role from session and redirect to appropriate dashboard
+  const userRole = req.session.user?.role || 'consumer';
   
-  if (role === 'producer') {
-    res.redirect('/dashboard/producer');
-  } else if (role === 'distributor') {
-    res.redirect('/dashboard/distributor');
-  } else if (role === 'retailer') {
-    res.redirect('/dashboard/retailer');
+  console.log('Dashboard default route, user role:', userRole);
+  
+  if (userRole === 'producer') {
+    return res.redirect('/dashboard/producer');
+  } else if (userRole === 'distributor') {
+    return res.redirect('/dashboard/distributor');
+  } else if (userRole === 'retailer') {
+    return res.redirect('/dashboard/retailer');
   } else {
-    res.redirect('/');
+    return res.redirect('/');
   }
 });
-
-// Dashboard cho nhà sản xuất
-router.get('/producer', isAuthenticated, loadUser, isProducer, dashboardController.getProducerDashboard);
-
-// Dashboard cho nhà phân phối
-router.get('/distributor', isAuthenticated, loadUser, isDistributor, dashboardController.getDistributorDashboard);
-
-// Dashboard cho nhà bán lẻ
-router.get('/retailer', isAuthenticated, loadUser, isRetailer, dashboardController.getRetailerDashboard);
 
 module.exports = router;

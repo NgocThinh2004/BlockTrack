@@ -46,7 +46,16 @@
           
           <% if (locals.user && locals.user.id === product.ownerId) { %>
             <div class="d-flex mt-4">
-              <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">Chỉnh sửa</a>
+              <% if (!product.blockchainId || product.blockchainId === 'Đang xử lý') { %>
+                <!-- Chỉ cho phép chỉnh sửa khi sản phẩm CHƯA được đưa lên blockchain -->
+                <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">Chỉnh sửa</a>
+              <% } else { %>
+                <!-- Hiển thị nút bị vô hiệu hóa với tooltip để giải thích -->
+                <button class="btn btn-secondary me-2" disabled data-bs-toggle="tooltip" 
+                  data-bs-title="Không thể chỉnh sửa thông tin sản phẩm đã được xác thực trên blockchain">
+                  <i class="fas fa-lock me-1"></i> Đã khóa
+                </button>
+              <% } %>
               <a href="/stages/product/<%= product.id %>/add" class="btn btn-success me-2">Thêm giai đoạn</a>
               <% if (!qrCode) { %>
                 <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2">Tạo mã QR</a>
@@ -108,7 +117,13 @@
         </div>
         <div class="card-body">
           <p><strong>ID:</strong> <span class="text-monospace"><%= product.blockchainId || 'Đang xử lý' %></span></p>
-          <p class="mb-0"><strong>Trạng thái:</strong> <span class="badge bg-success">Đã xác thực</span></p>
+          <p><strong>Trạng thái:</strong> 
+            <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
+              <span class="badge bg-success">Đã xác thực - Không thể sửa đổi</span>
+            <% } else { %>
+              <span class="badge bg-warning">Đang xử lý</span>
+            <% } %>
+          </p>
           
           <hr>
           <div class="d-grid">

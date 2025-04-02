@@ -104,18 +104,24 @@ class User {
     try {
       if (!email) return null;
       
+      console.log(`Looking up user by email: ${email}`);
+      
       const snapshot = await firebase.firestore()
         .collection('users')
         .where('email', '==', email.toLowerCase())
         .get();
       
       if (snapshot.empty) {
+        console.log('User not found by email');
         return null;
       }
       
+      console.log('User found by email');
+      const userData = snapshot.docs[0].data();
+      
       return new User({
         id: snapshot.docs[0].id,
-        ...snapshot.docs[0].data()
+        ...userData
       });
     } catch (error) {
       console.error('Error getting user by email:', error);

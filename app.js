@@ -24,18 +24,44 @@ const sessionConfig = {
   store: new FileStore({
     path: './sessions',
     ttl: 86400,
-    retries: 0
+    retries: 0,
+    logFn: function() {} // Disable verbose logging
   }),
   secret: process.env.SESSION_SECRET || 'blockchain-secure-secret',
   name: 'blocktrack.sid',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,  // Change to true to ensure session is saved
+  saveUninitialized: true,  // Change to true
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // Set to false to work without HTTPS in development
     maxAge: 24 * 60 * 60 * 1000
   }
 };
 app.use(session(sessionConfig));
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  const originalRedirect = res.redirect;
+  res.redirect = function(url) {
+    console.log(`Redirecting to: ${url}`);
+    originalRedirect.call(this, url);
+  };
+  
+  console.log(`Session contains userId: ${!!req.session.userId}`);
+  console.log(`Session contains user: ${!!req.session.user}`);
+  
+  next();
+});
+
+// Add after session middleware
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Session data:`, {
+      userId: req.session.userId,
+      userRole: req.session.user?.role
+    });
+  }
+  next();
+});
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -74,6 +100,7 @@ try {
   try {
     const dashboardRoutes = require('./routes/dashboardRoutes');
     app.use('/dashboard', dashboardRoutes);
+    console.log('Dashboard routes loaded successfully');
   } catch (err) {
     console.log('Dashboard routes not loaded:', err.message);
   }

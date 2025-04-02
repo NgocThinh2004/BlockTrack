@@ -1,26 +1,35 @@
 const User = require('../models/userModel');
 
+// Middleware xác thực người dùng
+
 /**
- * Middleware xác thực người dùng đơn giản hóa
+ * Kiểm tra người dùng đã đăng nhập chưa
+ * Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
  */
 exports.isAuthenticated = (req, res, next) => {
+  console.log('isAuthenticated middleware called');
+  console.log('Session:', req.session);
+  console.log('User in session:', req.session?.user);
+  
   if (req.session && req.session.userId) {
+    console.log('User is authenticated, userId:', req.session.userId);
     return next();
   }
+  
+  console.log('User is not authenticated, redirecting to login');
   res.redirect('/auth/login');
 };
 
 /**
- * Middleware để tải thông tin người dùng và gắn vào request
- * Đặt middleware này sau isAuthenticated để đảm bảo có userId
+ * Tải thông tin người dùng hiện tại
  */
 exports.loadUser = async (req, res, next) => {
   try {
     if (req.session && req.session.userId) {
       const user = await User.getUserById(req.session.userId);
+      
       if (user) {
         req.user = user;
-        // Đồng thời làm cho user có sẵn cho views thông qua res.locals
         res.locals.user = user;
       }
     }
@@ -42,15 +51,23 @@ exports.isAdmin = (req, res, next) => {
   });
 };
 
-// Kiểm tra vai trò
+// Middleware để kiểm tra vai trò 
 exports.hasRole = (roles) => {
   return (req, res, next) => {
-    if (req.user && roles.includes(req.user.role)) {
+    if (!req.session || !req.session.user) {
+      return res.redirect('/auth/login');
+    }
+    
+    const userRole = req.session.user.role;
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+    
+    if (allowedRoles.includes(userRole)) {
       return next();
     }
+    
     res.status(403).render('error', {
       message: 'Bạn không có quyền truy cập trang này',
-      title: 'Lỗi quyền truy cập'
+      error: { status: 403 }
     });
   };
 };

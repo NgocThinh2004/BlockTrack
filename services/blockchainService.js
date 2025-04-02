@@ -207,4 +207,39 @@ class BlockchainService {
   }
 }
 
+async function initBlockchain() {
+  // Nếu đã khởi tạo rồi thì không cần khởi tạo lại
+  if (web3 && contract) {
+    return { web3, contract };
+  }
+
+  try {
+    // Khởi tạo web3
+    const provider = process.env.BLOCKCHAIN_PROVIDER;
+    web3 = new Web3(new Web3.providers.HttpProvider(provider));
+    
+    // Kiểm tra kết nối
+    const isConnected = await web3.eth.net.isListening();
+    if (!isConnected) {
+      console.error('Cannot connect to Ethereum network');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Using mock blockchain in development mode');
+        // Không sử dụng mô phỏng trong môi trường production
+        return mockBlockchainService;
+      }
+      throw new Error('Blockchain connection failed');
+    }
+    
+    // ...tiếp tục khởi tạo contract...
+    
+  } catch (error) {
+    console.error('Blockchain initialization error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Using mock blockchain in development mode');
+      return mockBlockchainService;
+    }
+    throw error;
+  }
+}
+
 module.exports = new BlockchainService();

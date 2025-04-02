@@ -15,8 +15,16 @@ exports.showAddStageForm = async (req, res, next) => {
       return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
     }
     
+    // Kiểm tra quyền truy cập (Debug)
+    console.log('Quyền sản phẩm - debug:', {
+      currentUserId: req.user?.id || 'không có user',
+      productOwnerId: product.ownerId,
+      sessionUserId: req.session.userId,
+      isOwner: req.user?.id === product.ownerId
+    });
+    
     // Chỉ chủ sở hữu mới có thể thêm giai đoạn
-    if (product.ownerId !== req.session.userId) {
+    if (!req.user || product.ownerId !== req.user.id) {
       return res.status(403).render('error', { message: 'Bạn không có quyền thêm giai đoạn cho sản phẩm này' });
     }
     
@@ -41,8 +49,16 @@ exports.addStage = async (req, res, next) => {
       return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
     }
     
+    // Kiểm tra quyền truy cập (Debug)
+    console.log('Quyền sản phẩm (addStage) - debug:', {
+      currentUserId: req.user?.id || 'không có user',
+      productOwnerId: product.ownerId,
+      sessionUserId: req.session.userId,
+      isOwner: req.user?.id === product.ownerId
+    });
+    
     // Chỉ chủ sở hữu mới có thể thêm giai đoạn
-    if (product.ownerId !== req.session.userId) {
+    if (!req.user || product.ownerId !== req.user.id) {
       return res.status(403).render('error', { message: 'Bạn không có quyền thêm giai đoạn cho sản phẩm này' });
     }
     
@@ -53,7 +69,7 @@ exports.addStage = async (req, res, next) => {
       stageName,
       description,
       location,
-      handledBy: req.session.userId
+      handledBy: req.user.id // Sử dụng req.user.id thay vì req.session.userId
     };
     
     await ProductStage.addStage(stageData);

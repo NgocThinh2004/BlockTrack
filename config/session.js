@@ -17,35 +17,31 @@ const configureSession = (app) => {
     console.log(`Đã tạo thư mục session: ${sessionDir}`);
   }
   
-  // Cấu hình session cơ bản (sử dụng memory store trong quá trình phát triển)
+  // Cấu hình session cơ bản (sử dụng file store cho môi trường production)
   const sessionConfig = {
     secret: sessionSecret,
     resave: true, 
     saveUninitialized: true,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Sửa thành false nếu không dùng HTTPS
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000 // 1 ngày
     },
     name: 'blockchain.sid'
   };
 
-  // Trong môi trường phát triển, sử dụng memory store thay vì file store để tránh lỗi
-  if (process.env.NODE_ENV === 'production') {
-    console.log('Sử dụng FileStore cho session trong môi trường production');
-    sessionConfig.store = new FileStore({
-      path: sessionDir,
-      ttl: 86400, // 1 ngày (giây)
-      retries: 0,
-      logFn: () => {}
-    });
-  } else {
-    console.log('Sử dụng Memory Store cho session trong môi trường phát triển');
-    // Sẽ sử dụng memory store mặc định
-  }
+  // Sử dụng FileStore cho cả môi trường development và production
+  console.log('Sử dụng FileStore cho session');
+  sessionConfig.store = new FileStore({
+    path: sessionDir,
+    ttl: 86400, // 1 ngày (giây)
+    retries: 0,
+    logFn: () => {}
+  });
   
   // Thêm middleware session
   app.use(session(sessionConfig));
+  
   console.log('Session middleware đã được thiết lập');
 };
 
