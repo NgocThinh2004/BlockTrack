@@ -13,6 +13,19 @@
             <p class="lead mb-4">Đã có lỗi xảy ra trong quá trình xử lý yêu cầu của bạn.</p>
           <% } %>
           
+          <!-- Special notice for Firebase index errors -->
+          <% if (locals.error && locals.error.code === 'failed-precondition' && locals.error.message && locals.error.message.includes('requires an index')) { %>
+            <div class="alert alert-warning">
+              <h5><i class="fas fa-database me-2"></i>Lỗi chỉ mục Firestore</h5>
+              <p>Cần tạo chỉ mục (index) trong Firebase để thực hiện truy vấn này.</p>
+              <a href="https://console.firebase.google.com/v1/r/project/blockchain-163b8/firestore/indexes?create_composite=ClFwcm9qZWN0cy9ibG9ja2NoYWluLTE2M2I4L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9wcm9kdWN0cy9pbmRleGVzL18QARoLCgdvd25lcklkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg" 
+                 class="btn btn-primary mt-2" target="_blank">
+                <i class="fas fa-external-link-alt me-1"></i> Tạo chỉ mục trên Firebase
+              </a>
+              <p class="mt-2 mb-0 small">Sau khi tạo xong chỉ mục, có thể mất vài phút để kích hoạt. Hãy thử tải lại trang sau vài phút.</p>
+            </div>
+          <% } %>
+          
           <% if (locals.error && process.env.NODE_ENV === 'development') { %>
             <div class="text-start">
               <details>

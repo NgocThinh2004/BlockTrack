@@ -1,5 +1,6 @@
 const Product = require('../models/productModel');
 const User = require('../models/userModel');
+const Activity = require('../models/activityModel'); // Import Activity model
 
 /**
  * Controller xử lý hiển thị dashboard cho từng vai trò
@@ -20,9 +21,10 @@ exports.getProducerDashboard = async (req, res, next) => {
       return res.status(403).redirect('/auth/login');
     }
     
-    const products = await Product.getProductsByManufacturer(userId);
+    // Lấy sản phẩm từ database
+    const products = await Product.getProductsByOwner(userId);
     
-    // Thống kê sản phẩm theo giai đoạn
+    // Đếm số lượng sản phẩm theo giai đoạn
     const productsByStage = {
       production: products.filter(p => p.currentStage === 'production').length,
       packaging: products.filter(p => p.currentStage === 'packaging').length,
@@ -31,12 +33,17 @@ exports.getProducerDashboard = async (req, res, next) => {
       sold: products.filter(p => p.currentStage === 'sold').length
     };
     
+    // Lấy hoạt động gần đây của người dùng
+    const activities = await Activity.getActivitiesByUser(userId);
+    console.log('User activities:', activities.length);
+    
     res.render('dashboard/producer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      title: 'Dashboard nhà sản xuất'
+      activities, // Thêm activities vào đây
+      title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {
     console.error('Error in producer dashboard:', error);
@@ -56,21 +63,25 @@ exports.getDistributorDashboard = async (req, res, next) => {
       return res.status(403).redirect('/auth/login');
     }
     
-    const products = await Product.getProductsByManufacturer(userId);
+    // Lấy sản phẩm từ database
+    const products = await Product.getProductsByOwner(userId);
     
-    // Thống kê sản phẩm theo giai đoạn
+    // Đếm số lượng sản phẩm theo giai đoạn
     const productsByStage = {
-      received: products.filter(p => p.currentStage === 'distribution').length,
-      inTransit: products.filter(p => p.currentStage === 'in_transit').length,
-      delivered: products.filter(p => p.currentStage === 'retail').length
+      inTransit: products.filter(p => p.currentStage === 'distribution').length,
+      delivered: products.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
     };
+    
+    // Lấy hoạt động gần đây của người dùng
+    const activities = await Activity.getActivitiesByUser(userId);
     
     res.render('dashboard/distributor', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      title: 'Dashboard nhà phân phối'
+      activities, // Thêm activities vào đây
+      title: 'Nhà phân phối Dashboard'
     });
   } catch (error) {
     console.error('Error in distributor dashboard:', error);
@@ -90,20 +101,25 @@ exports.getRetailerDashboard = async (req, res, next) => {
       return res.status(403).redirect('/auth/login');
     }
     
-    const products = await Product.getProductsByManufacturer(userId);
+    // Lấy sản phẩm từ database
+    const products = await Product.getProductsByOwner(userId);
     
-    // Thống kê sản phẩm theo giai đoạn
+    // Đếm số lượng sản phẩm theo giai đoạn
     const productsByStage = {
       inStock: products.filter(p => p.currentStage === 'retail').length,
       sold: products.filter(p => p.currentStage === 'sold').length
     };
+    
+    // Lấy hoạt động gần đây của người dùng
+    const activities = await Activity.getActivitiesByUser(userId);
     
     res.render('dashboard/retailer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      title: 'Dashboard nhà bán lẻ'
+      activities, // Thêm activities vào đây
+      title: 'Nhà bán lẻ Dashboard'
     });
   } catch (error) {
     console.error('Error in retailer dashboard:', error);

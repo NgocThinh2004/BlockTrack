@@ -1,8 +1,9 @@
 const Product = require('../models/productModel');
 const QRCode = require('../models/qrCodeModel');
+const ProductStage = require('../models/stageModel');
 
 /**
- * Controller đơn giản cho trang truy xuất
+ * Controller cho trang truy xuất
  */
 exports.showTrackForm = (req, res) => {
   res.render('track/form', { 
@@ -24,34 +25,33 @@ exports.searchProduct = async (req, res) => {
   res.redirect(`/track/${productId}`);
 };
 
-exports.trackProduct = async (req, res) => {
-  const productId = req.params.id;
-  
-  // Dữ liệu mẫu
-  const mockProduct = {
-    id: productId,
-    name: "Sản phẩm mẫu " + productId,
-    manufacturer: "Nhà sản xuất mẫu",
-    origin: "Việt Nam",
-    productionDate: new Date(),
-    currentStage: "production",
-    blockchainId: "0x123456789",
-    description: "Mô tả sản phẩm mẫu"
-  };
-  
-  const mockHistory = [
-    {
-      stageName: "production",
-      description: "Sản phẩm được sản xuất",
-      location: "Nhà máy A",
-      timestamp: new Date()
+exports.trackProduct = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    
+    // Tìm sản phẩm trong database
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.render('track/form', {
+        error: 'Không tìm thấy sản phẩm với ID đã nhập',
+        title: 'Truy xuất sản phẩm'
+      });
     }
-  ];
-  
-  res.render('track/product', {
-    product: mockProduct,
-    history: mockHistory,
-    qrCode: null,
-    title: `Truy xuất: ${mockProduct.name}`
-  });
+    
+    // Lấy lịch sử các giai đoạn
+    const history = await ProductStage.getStagesByProductId(productId);
+    
+    // Lấy QR code nếu có
+    const qrCode = await QRCode.getQRCodeByProductId(productId);
+    
+    res.render('track/product', {
+      product,
+      history: history || [],
+      qrCode,
+      title: `Truy xuất: ${product.name}`
+    });
+  } catch (error) {
+    next(error);
+  }
 };

@@ -25,15 +25,39 @@
             <div class="col-md-6">
               <p><strong>Nhà sản xuất:</strong> <%= product.manufacturer %></p>
               <p><strong>Xuất xứ:</strong> <%= product.origin %></p>
-              <p><strong>Ngày sản xuất:</strong> <%= new Date(product.productionDate).toLocaleDateString() %></p>
+              <p><strong>Ngày sản xuất:</strong> 
+                <% try { %>
+                  <%= product.productionDate && !isNaN(new Date(product.productionDate)) 
+                      ? new Date(product.productionDate).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'}) 
+                      : 'Không có dữ liệu' %>
+                <% } catch (e) { %>
+                  Không có dữ liệu
+                <% } %>
+              </p>
               <% if (product.expiryDate) { %>
-                <p><strong>Hạn sử dụng:</strong> <%= new Date(product.expiryDate).toLocaleDateString() %></p>
+                <p><strong>Hạn sử dụng:</strong> 
+                  <% try { %>
+                    <%= !isNaN(new Date(product.expiryDate)) 
+                        ? new Date(product.expiryDate).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'}) 
+                        : 'Không có dữ liệu' %>
+                  <% } catch (e) { %>
+                    Không có dữ liệu
+                  <% } %>
+                </p>
               <% } %>
             </div>
             <div class="col-md-6">
               <p><strong>Số lô:</strong> <%= product.batchNumber || 'Không có' %></p>
               <p><strong>Blockchain ID:</strong> <%= product.blockchainId || 'Đang xử lý' %></p>
-              <p><strong>Ngày tạo:</strong> <%= new Date(product.createdAt).toLocaleString() %></p>
+              <p><strong>Ngày tạo:</strong> 
+                <% try { %>
+                  <%= product.createdAt && !isNaN(new Date(product.createdAt)) 
+                      ? new Date(product.createdAt).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) 
+                      : 'Không có dữ liệu' %>
+                <% } catch (e) { %>
+                  Không có dữ liệu
+                <% } %>
+              </p>
             </div>
           </div>
           

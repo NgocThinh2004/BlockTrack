@@ -2,6 +2,7 @@ const firebase = require('firebase/app');
 require('firebase/firestore');
 const { v4: uuidv4 } = require('uuid');
 const QRCodeService = require('../services/qrCodeService');
+const Activity = require('./activityModel'); // Import Activity model
 
 // Reference to QR codes collection
 const qrCodesCollection = firebase.firestore().collection('qrCodes');
@@ -46,6 +47,20 @@ class QRCode {
       
       // Save to database
       await qrCodesCollection.doc(qrId).set(qrCode);
+      
+      // Ghi lại hoạt động nếu có ownerId
+      const Product = require('./productModel'); // Import here to avoid circular dependency
+      const product = await Product.getProductById(productId);
+      if (product && product.ownerId) {
+        await Activity.addActivity({
+          userId: product.ownerId,
+          type: 'qr_generated',
+          entityId: qrId,
+          entityName: product.name,
+          entityType: 'qr',
+          description: `Mã QR đã được tạo cho ${product.name}`
+        });
+      }
       
       return qrCode;
     } catch (error) {

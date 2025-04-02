@@ -2,6 +2,7 @@ const firebase = require('firebase/app');
 require('firebase/firestore');
 const { v4: uuidv4 } = require('uuid');
 const blockchainService = require('../services/blockchainService');
+const Activity = require('./activityModel'); // Import Activity model
 
 // Reference to products collection
 const productsCollection = firebase.firestore().collection('products');
@@ -53,6 +54,16 @@ class Product {
       // Save to database
       await productsCollection.doc(productId).set(product);
       
+      // Ghi lại hoạt động
+      await Activity.addActivity({
+        userId: productData.ownerId,
+        type: 'product_created',
+        entityId: product.id,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Sản phẩm ${product.name} đã được tạo`
+      });
+      
       return product;
     } catch (error) {
       console.error('Error creating product:', error);
@@ -62,23 +73,30 @@ class Product {
   
   /**
    * Get product by ID
-   * @param {string} id - Product ID
-   * @returns {Object|null} - Product data
+   * @param {string} productId - Product ID
+   * @returns {Object|null} - Product or null if not found
    */
-  static async getProductById(id) {
+  static async getProductById(productId) {
     try {
-      const doc = await productsCollection.doc(id).get();
+      const doc = await productsCollection.doc(productId).get();
       
       if (!doc.exists) {
         return null;
       }
       
+      const data = doc.data();
+      
+      // Convert Firestore Timestamps to JavaScript Date objects
       return {
         id: doc.id,
-        ...doc.data()
+        ...data,
+        productionDate: data.productionDate ? (data.productionDate instanceof firebase.firestore.Timestamp ? data.productionDate.toDate() : new Date(data.productionDate)) : null,
+        expiryDate: data.expiryDate ? (data.expiryDate instanceof firebase.firestore.Timestamp ? data.expiryDate.toDate() : new Date(data.expiryDate)) : null,
+        createdAt: data.createdAt ? (data.createdAt instanceof firebase.firestore.Timestamp ? data.createdAt.toDate() : new Date(data.createdAt)) : null,
+        updatedAt: data.updatedAt ? (data.updatedAt instanceof firebase.firestore.Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt)) : null
       };
     } catch (error) {
-      console.error('Error getting product:', error);
+      console.error('Error getting product by ID:', error);
       throw error;
     }
   }
@@ -134,6 +152,18 @@ class Product {
       
       // Update in database
       await productsCollection.doc(id).update(updateData);
+      
+      // Ghi lại hoạt động nếu có ownerId
+      if (updates.ownerId) {
+        await Activity.addActivity({
+          userId: updates.ownerId,
+          type: 'product_updated',
+          entityId: id,
+          entityName: updates.name || 'Sản phẩm',
+          entityType: 'product',
+          description: `Sản phẩm ${updates.name || id} đã được cập nhật`
+        });
+      }
       
       return true;
     } catch (error) {
@@ -213,15 +243,42 @@ class Product {
    */
   static async getProductsByOwner(ownerId) {
     try {
-      const snapshot = await productsCollection
-        .where('ownerId', '==', ownerId)
-        .orderBy('createdAt', 'desc')
-        .get();
+      let snapshot;
+      let usingSortedQuery = true;
       
-      return snapshot.docs.map(doc => ({
+      try {
+        // Try with sorting first (requires index)
+        snapshot = await productsCollection
+          .where('ownerId', '==', ownerId)
+          .orderBy('createdAt', 'desc')
+          .get();
+      } catch (error) {
+        // If index error occurs, fall back to simple query without sorting
+        if (error.code === 'failed-precondition') {
+          console.warn('Firestore index not yet created, falling back to non-sorted query');
+          console.warn('Please create the required index at: https://console.firebase.google.com/project/blockchain-163b8/firestore/indexes');
+          snapshot = await productsCollection
+            .where('ownerId', '==', ownerId)
+            .get();
+          usingSortedQuery = false;
+        } else {
+          throw error; // Re-throw if it's not an index error
+        }
+      }
+      
+      const products = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // If we had to use the fallback query, sort the results in memory
+      if (!usingSortedQuery) {
+        products.sort((a, b) => {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        });
+      }
+      
+      return products;
     } catch (error) {
       console.error('Error getting products by owner:', error);
       throw error;

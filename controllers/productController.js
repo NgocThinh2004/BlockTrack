@@ -1,73 +1,82 @@
 const Product = require('../models/productModel');
 const QRCode = require('../models/qrCodeModel');
+const ProductStage = require('../models/stageModel');
 
 /**
- * Controller đơn giản cho trang sản phẩm
+ * Controller xử lý sản phẩm
  */
-exports.getAllProducts = (req, res) => {
-  // Dữ liệu mẫu
-  const products = [
-    {
-      id: "product-1",
-      name: "Sản phẩm mẫu 1",
-      manufacturer: "Công ty ABC",
-      origin: "Việt Nam",
-      productionDate: new Date(),
-      currentStage: "production",
-      createdAt: new Date(),
-      description: "Mô tả sản phẩm mẫu 1"
-    },
-    {
-      id: "product-2",
-      name: "Sản phẩm mẫu 2",
-      manufacturer: "Công ty XYZ",
-      origin: "Việt Nam",
-      productionDate: new Date(),
-      currentStage: "retail",
-      createdAt: new Date(),
-      description: "Mô tả sản phẩm mẫu 2"
+exports.getAllProducts = async (req, res, next) => {
+  try {
+    // Lấy tham số tìm kiếm và lọc từ query
+    const search = req.query.search || '';
+    const stage = req.query.stage || '';
+    const sort = req.query.sort || 'createdAt';
+
+    let products = [];
+    
+    // Nếu có tìm kiếm
+    if (search) {
+      products = await Product.searchProducts(search);
+    } else {
+      // Lấy tất cả sản phẩm
+      products = await Product.getAllProducts();
     }
-  ];
-  
-  res.render('products/index', { 
-    title: 'Danh sách sản phẩm',
-    products
-  });
+
+    // Lọc theo giai đoạn nếu có
+    if (stage) {
+      products = products.filter(p => p.currentStage === stage);
+    }
+
+    // Sắp xếp kết quả
+    products.sort((a, b) => {
+      if (sort === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sort === 'manufacturer') {
+        return a.manufacturer.localeCompare(b.manufacturer);
+      } else {
+        // Mặc định sắp xếp theo createdAt - mới nhất trước
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+    });
+
+    res.render('products/index', { 
+      title: 'Danh sách sản phẩm',
+      products,
+      currentSearch: search,
+      currentStage: stage,
+      currentSort: sort
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.getProduct = (req, res) => {
-  const productId = req.params.id;
-  
-  // Dữ liệu mẫu
-  const product = {
-    id: productId,
-    name: "Sản phẩm " + productId,
-    manufacturer: "Công ty ABC",
-    origin: "Việt Nam",
-    productionDate: new Date(),
-    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-    currentStage: "production",
-    blockchainId: "0x123456789",
-    createdAt: new Date(),
-    ownerId: req.session.userId || '',
-    description: "Mô tả sản phẩm chi tiết"
-  };
-  
-  const history = [
-    {
-      stageName: "production",
-      description: "Sản phẩm được sản xuất",
-      location: "Nhà máy A",
-      timestamp: new Date()
+exports.getProduct = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    
+    // Lấy thông tin sản phẩm từ database
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
     }
-  ];
-  
-  res.render('products/show', {
-    title: product.name,
-    product,
-    history,
-    qrCode: null
-  });
+    
+    // Lấy lịch sử các giai đoạn của sản phẩm
+    const stages = await ProductStage.getStagesByProductId(productId);
+    
+    // Lấy mã QR nếu có
+    const qrCode = await QRCode.getQRCodeByProductId(productId);
+    
+    res.render('products/show', {
+      title: product.name,
+      product,
+      history: stages || [],
+      qrCode
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // Các phương thức khác đơn giản hóa
