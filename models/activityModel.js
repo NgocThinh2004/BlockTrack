@@ -75,10 +75,20 @@ class Activity {
       
       let activities = snapshot.docs.map(doc => {
         const data = doc.data();
+        // Xử lý đặc biệt cho timestamp từ Firestore
+        let timestamp = data.timestamp;
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          timestamp = timestamp.toDate();
+        } else if (timestamp) {
+          timestamp = new Date(timestamp);
+        } else {
+          timestamp = new Date();
+        }
+        
         return {
           id: doc.id,
           ...data,
-          timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
+          timestamp: timestamp
         };
       });
       

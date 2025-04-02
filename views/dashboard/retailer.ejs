@@ -91,8 +91,47 @@
                     </a>
                   </td>
                   <td><%= product.manufacturer %></td>
-                  <td><%= new Date(product.updatedAt || product.createdAt).toLocaleDateString() %></td>
-                  <td><%= product.expiryDate ? new Date(product.expiryDate).toLocaleDateString() : 'Không có' %></td>
+                  <td>
+                    <% 
+                      let updatedDate = '';
+                      try {
+                        const dateValue = product.updatedAt || product.createdAt;
+                        if (dateValue) {
+                          // Kiểm tra nếu là timestamp từ Firebase
+                          if (dateValue.toDate) {
+                            updatedDate = dateValue.toDate().toLocaleDateString('vi-VN');
+                          } 
+                          // Kiểm tra nếu là Date hoặc chuỗi ISO
+                          else if (!isNaN(new Date(dateValue))) {
+                            updatedDate = new Date(dateValue).toLocaleDateString('vi-VN');
+                          }
+                        }
+                      %>
+                      <%= updatedDate || 'Không có dữ liệu' %>
+                    <% } catch(e) { %>
+                      Không có dữ liệu
+                    <% } %>
+                  </td>
+                  <td>
+                    <% 
+                      let expiryDate = '';
+                      try {
+                        if (product.expiryDate) {
+                          // Kiểm tra nếu là timestamp từ Firebase
+                          if (product.expiryDate.toDate) {
+                            expiryDate = product.expiryDate.toDate().toLocaleDateString('vi-VN');
+                          } 
+                          // Kiểm tra nếu là Date hoặc chuỗi ISO
+                          else if (!isNaN(new Date(product.expiryDate))) {
+                            expiryDate = new Date(product.expiryDate).toLocaleDateString('vi-VN');
+                          }
+                        }
+                      %>
+                      <%= expiryDate || 'Không có dữ liệu' %>
+                    <% } catch(e) { %>
+                      Không có dữ liệu
+                    <% } %>
+                  </td>
                   <td>
                     <span class="badge bg-success">Sẵn sàng bán</span>
                   </td>

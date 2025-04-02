@@ -109,7 +109,26 @@
                       <%= product.currentStage %>
                     </span>
                   </td>
-                  <td><%= new Date(product.createdAt).toLocaleDateString() %></td>
+                  <td>
+                    <% 
+                      let createdDate = '';
+                      try {
+                        if (product.createdAt) {
+                          // Kiểm tra nếu là timestamp từ Firebase
+                          if (product.createdAt.toDate) {
+                            createdDate = product.createdAt.toDate().toLocaleDateString('vi-VN');
+                          } 
+                          // Kiểm tra nếu là Date hoặc chuỗi ISO
+                          else if (!isNaN(new Date(product.createdAt))) {
+                            createdDate = new Date(product.createdAt).toLocaleDateString('vi-VN');
+                          }
+                        }
+                        %>
+                        <%= createdDate || 'Không có dữ liệu' %>
+                    <% } catch(e) { %>
+                      Không có dữ liệu
+                    <% } %>
+                  </td>
                   <td>
                     <span class="text-muted"><%= product.blockchainId ? product.blockchainId.substring(0, 10) + '...' : 'Đang xử lý' %></span>
                   </td>
@@ -185,7 +204,26 @@
                     </div>
                     <div>
                       <p class="mb-0"><%= activity.description %></p>
-                      <small class="text-muted"><%= activity.timestamp ? new Date(activity.timestamp).toLocaleString() : 'Không xác định' %></small>
+                      <small class="text-muted">
+                        <% 
+                          let timestamp = '';
+                          try {
+                            if (activity.timestamp) {
+                              // Kiểm tra nếu là timestamp từ Firebase
+                              if (activity.timestamp.toDate) {
+                                timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
+                              } 
+                              // Kiểm tra nếu là Date hoặc chuỗi ISO
+                              else if (!isNaN(new Date(activity.timestamp))) {
+                                timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
+                              }
+                            }
+                          %>
+                          <%= timestamp || 'Không có dữ liệu' %>
+                        <% } catch(e) { %>
+                          Không có dữ liệu
+                        <% } %>
+                      </small>
                     </div>
                   </div>
                 </li>

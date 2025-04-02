@@ -92,7 +92,27 @@
                   </td>
                   <td><%= product.origin %></td>
                   <td>Khu vực phân phối <%= Math.floor(Math.random() * 5) + 1 %></td>
-                  <td><%= new Date(product.updatedAt || product.createdAt).toLocaleDateString() %></td>
+                  <td>
+                    <% 
+                      let updatedDate = '';
+                      try {
+                        const dateValue = product.updatedAt || product.createdAt;
+                        if (dateValue) {
+                          // Kiểm tra nếu là timestamp từ Firebase
+                          if (dateValue.toDate) {
+                            updatedDate = dateValue.toDate().toLocaleDateString('vi-VN');
+                          } 
+                          // Kiểm tra nếu là Date hoặc chuỗi ISO
+                          else if (!isNaN(new Date(dateValue))) {
+                            updatedDate = new Date(dateValue).toLocaleDateString('vi-VN');
+                          }
+                        }
+                      %>
+                      <%= updatedDate || 'Không có dữ liệu' %>
+                    <% } catch(e) { %>
+                      Không có dữ liệu
+                    <% } %>
+                  </td>
                   <td>
                     <span class="badge bg-<%= product.currentStage === 'in_transit' ? 'warning' : 'info' %>">
                       <%= product.currentStage === 'in_transit' ? 'Đang vận chuyển' : 'Đã nhận hàng' %>

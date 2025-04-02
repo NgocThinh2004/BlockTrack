@@ -41,7 +41,7 @@
   </div>
 
   <% if (products && products.length > 0) { %>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       <% products.forEach(product => { %>
         <div class="col">
           <div class="card h-100">
@@ -54,14 +54,52 @@
               %>">
                 <%= product.currentStage %>
               </span>
-              <small class="text-muted"><%= new Date(product.createdAt).toLocaleDateString() %></small>
+              <small class="text-muted">
+                <% 
+                  let createdDateStr = '';
+                  try {
+                    if (product.createdAt) {
+                      // Check if it's a Firebase Timestamp
+                      if (product.createdAt.toDate) {
+                        createdDateStr = product.createdAt.toDate().toLocaleDateString('vi-VN');
+                      } 
+                      // Check if it's a Date object or ISO string
+                      else if (!isNaN(new Date(product.createdAt))) {
+                        createdDateStr = new Date(product.createdAt).toLocaleDateString('vi-VN');
+                      }
+                    }
+                  %>
+                    <%= createdDateStr || 'N/A' %>
+                <% } catch(e) { %>
+                  N/A
+                <% } %>
+              </small>
             </div>
             
             <div class="card-body">
               <h5 class="card-title"><%= product.name %></h5>
               <h6 class="card-subtitle mb-2 text-muted"><%= product.manufacturer %></h6>
               <p class="card-text">Xuất xứ: <%= product.origin %></p>
-              <p class="card-text">Ngày sản xuất: <%= new Date(product.productionDate).toLocaleDateString() %></p>
+              <p class="card-text">Ngày sản xuất: 
+                <% 
+                  let productionDateStr = '';
+                  try {
+                    if (product.productionDate) {
+                      // Check if it's a Firebase Timestamp
+                      if (product.productionDate.toDate) {
+                        productionDateStr = product.productionDate.toDate().toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                      } 
+                      // Check if it's a Date object or ISO string
+                      else if (!isNaN(new Date(product.productionDate))) {
+                        productionDateStr = new Date(product.productionDate).toLocaleDateString('vi-VN', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                      }
+                    }
+                  %>
+                    <%= productionDateStr || 'Không có dữ liệu' %>
+                <% } catch(e) { %>
+                  Không có dữ liệu
+                <% } %>
+              </p>
               
               <% if (product.description) { %>
                 <p class="card-text"><%= product.description.substring(0, 100) %>

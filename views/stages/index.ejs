@@ -71,7 +71,24 @@
                         <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
                       </h5>
                       <span class="text-muted fs-6">
-                        <%= new Date(stage.timestamp).toLocaleString() %>
+                        <% 
+                          let stageTime = '';
+                          try {
+                            if (stage.timestamp) {
+                              // Kiểm tra nếu là timestamp từ Firebase
+                              if (stage.timestamp.toDate) {
+                                stageTime = stage.timestamp.toDate().toLocaleString('vi-VN');
+                              } 
+                              // Kiểm tra nếu là Date hoặc chuỗi ISO
+                              else if (!isNaN(new Date(stage.timestamp))) {
+                                stageTime = new Date(stage.timestamp).toLocaleString('vi-VN');
+                              }
+                            }
+                          %>
+                          <%= stageTime || 'Không xác định' %>
+                        <% } catch(e) { %>
+                          Không xác định
+                        <% } %>
                       </span>
                     </div>
                     <p><%= stage.description %></p>
