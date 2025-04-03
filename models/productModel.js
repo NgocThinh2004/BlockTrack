@@ -42,13 +42,23 @@ class Product {
       
       // Add product to blockchain
       try {
-        const { blockchainId, transactionHash } = await blockchainService.addProduct(product);
-        product.blockchainId = blockchainId;
+        console.log('Attempting to add product to blockchain...');
+        // Use different variable names in destructuring to avoid redeclaration
+        const { blockchainId: bcId, transactionHash } = await blockchainService.addProduct(product);
+        
+        console.log('Product successfully added to blockchain:', {
+          blockchainId: bcId,
+          transactionHash
+        });
+        
+        product.blockchainId = bcId;
         product.blockchainTxId = transactionHash;
       } catch (blockchainError) {
         console.error('Error adding product to blockchain:', blockchainError);
-        // Continue with saving to database even if blockchain fails
-        // In production you might want to handle this differently
+        
+        // Chỉ cần đánh dấu sản phẩm đang xử lý blockchain, người dùng có thể thử lại sau
+        product.blockchainId = 'Đang xử lý';
+        product.blockchainError = blockchainError.message;
       }
       
       // Save to database
@@ -335,11 +345,56 @@ class Product {
           product.name.toLowerCase().includes(query.toLowerCase()) ||
           product.manufacturer.toLowerCase().includes(query.toLowerCase())
         );
-      
+        
       return results;
     } catch (error) {
       console.error('Error searching products:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Thử lại đưa sản phẩm lên blockchain khi lần đầu gặp lỗi
+   * @param {string} productId - ID sản phẩm
+   * @returns {Object} - Kết quả với trạng thái thành công hoặc lỗi
+   */
+  static async retryBlockchain(productId) {
+    try {
+      const product = await this.getProductById(productId);
+      
+      if (!product) {
+        throw new Error('Không tìm thấy sản phẩm');
+      }
+      
+      // Chỉ cho phép thử lại nếu sản phẩm đang trong trạng thái "Đang xử lý" hoặc null
+      if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+        return {
+          success: false,
+          error: 'Sản phẩm này đã được xác thực trên blockchain'
+        };
+      }
+      
+      // Thử lại kết nối blockchain
+      const { blockchainId, transactionHash } = await blockchainService.addProduct(product);
+      
+      // Cập nhật thông tin sản phẩm
+      await productsCollection.doc(productId).update({
+        blockchainId: blockchainId,
+        blockchainTxId: transactionHash,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      return {
+        success: true,
+        blockchainId,
+        transactionHash
+      };
+    } catch (error) {
+      console.error('Error retrying blockchain connection:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 }

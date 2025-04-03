@@ -1,4 +1,42 @@
-const { web3, contract } = require('../config/blockchain');
+const Web3 = require('web3');
+const ProductTracker = require('../contracts/compiled/ProductTracker.json');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+// Configuration for blockchain connection
+let web3;
+let contract;
+
+/**
+ * Initialize blockchain connection
+ * - In development: Connect to local blockchain (Ganache)
+ * - In production: Connect to specified provider
+ */
+function initBlockchain() {
+  try {
+    // Use specified provider or default to local Ganache
+    const provider = process.env.BLOCKCHAIN_PROVIDER || 'http://localhost:7545';
+    web3 = new Web3(new Web3.providers.HttpProvider(provider));
+    
+    console.log('Blockchain provider:', provider);
+    
+    // Initialize contract with ABI and address
+    const contractAddress = process.env.CONTRACT_ADDRESS;
+    if (!contractAddress) {
+      console.warn('CONTRACT_ADDRESS not set in environment variables');
+      return;
+    }
+    
+    contract = new web3.eth.Contract(ProductTracker.abi, contractAddress);
+    console.log('Smart contract initialized at address:', contractAddress);
+  } catch (error) {
+    console.error('Failed to initialize blockchain connection:', error);
+  }
+}
+
+// Initialize blockchain on module load
+initBlockchain();
 
 /**
  * Service tương tác với blockchain
@@ -13,10 +51,19 @@ class BlockchainService {
    */
   async addProduct(product) {
     try {
+      // Kiểm tra kết nối blockchain
+      if (!web3 || !contract) {
+        console.error('Blockchain connection not initialized');
+        throw new Error('Blockchain connection not available');
+      }
+
       // Lấy tài khoản mặc định để ký giao dịch
       const accounts = await web3.eth.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No blockchain accounts available');
+      }
       const defaultAccount = accounts[0];
-      
+
       // Chuẩn bị dữ liệu cho blockchain (chỉ giữ các thông tin quan trọng)
       const productData = {
         name: product.name,
@@ -26,6 +73,8 @@ class BlockchainService {
         batchNumber: product.batchNumber || '',
         ownerId: product.ownerId
       };
+      
+      console.log('Sending product to blockchain:', productData);
       
       // Gọi hàm smart contract để thêm sản phẩm
       const result = await contract.methods
@@ -39,8 +88,21 @@ class BlockchainService {
         )
         .send({ from: defaultAccount, gas: 3000000 });
       
-      // Lấy ID của sản phẩm từ event của smart contract
-      const productId = result.events.ProductAdded.returnValues.productId;
+      // Ghi log toàn bộ kết quả để debug
+      console.log('Transaction result:', JSON.stringify(result, null, 2));
+      
+      // Xử lý kết quả an toàn hơn để tránh lỗi "Cannot read properties of undefined"
+      let productId;
+      
+      // Kiểm tra từng cấp của đối tượng kết quả
+      if (result && result.events && result.events.ProductAdded && 
+          result.events.ProductAdded.returnValues && result.events.ProductAdded.returnValues.productId) {
+        productId = result.events.ProductAdded.returnValues.productId;
+      } else {
+        console.warn('Could not extract productId from event. Using generated ID.');
+        // Fallback: Sử dụng transaction hash làm ID sản phẩm nếu không lấy được từ event
+        productId = `product_${result.transactionHash.substring(0, 10)}`;
+      }
       
       return {
         blockchainId: productId,
@@ -48,12 +110,9 @@ class BlockchainService {
       };
     } catch (error) {
       console.error('Blockchain Error (addProduct):', error);
-      // Trong môi trường thực tế, cần xử lý lỗi kết nối blockchain
-      // Tạm thời trả về một ID giả để phát triển
-      return {
-        blockchainId: `mock_${Date.now()}`,
-        transactionHash: `mock_tx_${Date.now()}`
-      };
+      
+      // Trả về lỗi để xử lý
+      throw new Error(`Blockchain transaction failed: ${error.message}`);
     }
   }
 
@@ -204,41 +263,6 @@ class BlockchainService {
       console.error('Blockchain Error (getProductHistory):', error);
       return [];
     }
-  }
-}
-
-async function initBlockchain() {
-  // Nếu đã khởi tạo rồi thì không cần khởi tạo lại
-  if (web3 && contract) {
-    return { web3, contract };
-  }
-
-  try {
-    // Khởi tạo web3
-    const provider = process.env.BLOCKCHAIN_PROVIDER;
-    web3 = new Web3(new Web3.providers.HttpProvider(provider));
-    
-    // Kiểm tra kết nối
-    const isConnected = await web3.eth.net.isListening();
-    if (!isConnected) {
-      console.error('Cannot connect to Ethereum network');
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Using mock blockchain in development mode');
-        // Không sử dụng mô phỏng trong môi trường production
-        return mockBlockchainService;
-      }
-      throw new Error('Blockchain connection failed');
-    }
-    
-    // ...tiếp tục khởi tạo contract...
-    
-  } catch (error) {
-    console.error('Blockchain initialization error:', error);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Using mock blockchain in development mode');
-      return mockBlockchainService;
-    }
-    throw error;
   }
 }
 

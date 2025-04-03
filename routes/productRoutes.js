@@ -22,4 +22,7 @@ router.get('/:id', productController.getProduct);
 router.get('/:id/edit', isAuthenticated, loadUser, productController.showEditForm);
 router.post('/:id/edit', isAuthenticated, loadUser, productController.updateProduct);
 
+// Thử lại kết nối blockchain
+router.post('/:id/retry-blockchain', isAuthenticated, loadUser, productController.retryBlockchain);
+
 module.exports = router;

@@ -214,3 +214,44 @@ exports.updateProduct = (req, res) => {
   const productId = req.params.id;
   res.redirect(`/products/${productId}`);
 };
+
+/**
+ * Thử lại gửi sản phẩm lên blockchain khi lần đầu gặp lỗi
+ */
+exports.retryBlockchain = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Kiểm tra quyền sở hữu
+    if (product.ownerId !== req.session.userId) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền thực hiện thao tác này' 
+      });
+    }
+    
+    // Chỉ cho phép thử lại nếu sản phẩm đang trong trạng thái "Đang xử lý" hoặc có lỗi blockchain
+    if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+      return res.status(400).render('error', { 
+        message: 'Sản phẩm này đã được xác thực trên blockchain' 
+      });
+    }
+    
+    // Thử lại đưa lên blockchain
+    const result = await Product.retryBlockchain(productId);
+    
+    if (result.success) {
+      req.flash('success', 'Sản phẩm đã được xác thực thành công trên blockchain');
+    } else {
+      req.flash('error', `Không thể xác thực sản phẩm: ${result.error}`);
+    }
+    
+    res.redirect(`/products/${productId}`);
+  } catch (error) {
+    next(error);
+  }
+};
