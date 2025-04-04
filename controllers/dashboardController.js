@@ -13,16 +13,23 @@ const Activity = require('../models/activityModel'); // Import Activity model
 exports.getProducerDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
-    console.log('Producer dashboard requested by userId:', userId);
+    console.log('[DASHBOARD] Producer dashboard requested by userId:', userId);
+    
+    if (!userId) {
+      console.log('[DASHBOARD] No userId in session, redirecting to login');
+      return res.redirect('/auth/login');
+    }
+    
     const user = await User.getUserById(userId);
     
     if (!user || user.role !== 'producer') {
-      console.log('Access denied: User is not a producer');
+      console.log('[DASHBOARD] Access denied: User is not a producer');
       return res.status(403).redirect('/auth/login');
     }
     
     // Lấy sản phẩm từ database
     const products = await Product.getProductsByOwner(userId);
+    console.log(`[DASHBOARD] Found ${products.length} products for user ${userId}`);
     
     // Đếm số lượng sản phẩm theo giai đoạn
     const productsByStage = {
@@ -33,14 +40,10 @@ exports.getProducerDashboard = async (req, res, next) => {
       sold: products.filter(p => p.currentStage === 'sold').length
     };
     
-    // Lấy hoạt động gần đây của người dùng
-    const activities = await Activity.getActivitiesByUser(userId, 10); // Tăng giới hạn lên 10
-    console.log('User activities loaded:', activities.length);
-    
-    // Log ra các hoạt động để debug
-    activities.forEach((activity, index) => {
-      console.log(`Activity ${index + 1}: [${activity.type}] ${activity.description}`);
-    });
+    // Lấy hoạt động gần đây với số lượng tăng lên
+    // Lấy 15 hoạt động để có dữ liệu dự phòng, nhưng view chỉ hiển thị 5
+    const activities = await Activity.getActivitiesByUser(userId, 15);
+    console.log(`[DASHBOARD] Loaded ${activities.length} activities for dashboard`);
     
     res.render('dashboard/producer', { 
       user,
@@ -51,12 +54,12 @@ exports.getProducerDashboard = async (req, res, next) => {
       title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {
-    console.error('Error in producer dashboard:', error);
+    console.error('[DASHBOARD] Error in producer dashboard:', error);
     next(error);
   }
 };
 
-// Rename function to match route reference if needed
+// Tương tự cập nhật cho getDistributorDashboard và getRetailerDashboard
 exports.getDistributorDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
@@ -77,15 +80,15 @@ exports.getDistributorDashboard = async (req, res, next) => {
       delivered: products.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
     };
     
-    // Lấy hoạt động gần đây của người dùng
-    const activities = await Activity.getActivitiesByUser(userId);
+    // Lấy hoạt động gần đây của người dùng (15 để dự phòng, view chỉ hiển thị 5)
+    const activities = await Activity.getActivitiesByUser(userId, 15);
     
     res.render('dashboard/distributor', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities, // Thêm activities vào đây
+      activities,
       title: 'Nhà phân phối Dashboard'
     });
   } catch (error) {
@@ -94,7 +97,6 @@ exports.getDistributorDashboard = async (req, res, next) => {
   }
 };
 
-// Rename function to match route reference if needed
 exports.getRetailerDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
@@ -115,15 +117,15 @@ exports.getRetailerDashboard = async (req, res, next) => {
       sold: products.filter(p => p.currentStage === 'sold').length
     };
     
-    // Lấy hoạt động gần đây của người dùng
-    const activities = await Activity.getActivitiesByUser(userId);
+    // Lấy hoạt động gần đây của người dùng (15 để dự phòng, view chỉ hiển thị 5)
+    const activities = await Activity.getActivitiesByUser(userId, 15);
     
     res.render('dashboard/retailer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities, // Thêm activities vào đây
+      activities,
       title: 'Nhà bán lẻ Dashboard'
     });
   } catch (error) {

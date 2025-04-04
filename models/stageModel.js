@@ -77,6 +77,67 @@ class ProductStage {
   }
   
   /**
+   * Add a transfer stage when ownership changes
+   * @param {string} productId - Product ID
+   * @param {string} previousOwnerId - Previous owner ID
+   * @param {string} newOwnerId - New owner ID
+   * @param {string} reason - Transfer reason
+   * @param {Object} receiverData - Information about the receiver
+   * @returns {Object} - Created stage
+   */
+  static async addTransferStage(productId, previousOwnerId, newOwnerId, reason = '', receiverData = {}) {
+    try {
+      const stageId = uuidv4();
+      
+      // Chuẩn bị mô tả dựa trên lý do và thông tin người nhận
+      let description = "Chuyển quyền sở hữu sản phẩm";
+      if (reason) {
+        description += ` - Lý do: ${reason}`;
+      }
+      if (receiverData.receiverName) {
+        description += ` - Người nhận: ${receiverData.receiverName}`;
+        if (receiverData.receiverRole) {
+          description += ` (${receiverData.receiverRole})`;
+        }
+      }
+      
+      // Prepare stage data 
+      const stage = {
+        id: stageId,
+        productId: productId,
+        stageName: 'ownership_transfer',
+        description: description,
+        location: 'N/A', // Vị trí không áp dụng cho chuyển quyền sở hữu
+        previousOwnerId: previousOwnerId,
+        newOwnerId: newOwnerId,
+        handledBy: previousOwnerId, // Người thực hiện là chủ sở hữu cũ
+        blockchainTxId: null,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      // Record stage on blockchain
+      try {
+        const { transactionHash } = await blockchainService.addStage({
+          ...stage,
+          stageName: 'ownership_transfer',
+          description: description
+        });
+        stage.blockchainTxId = transactionHash;
+      } catch (blockchainError) {
+        console.error('Error adding transfer stage to blockchain:', blockchainError);
+      }
+      
+      // Save stage to database
+      await stagesCollection.doc(stageId).set(stage);
+      
+      return stage;
+    } catch (error) {
+      console.error('Error adding transfer stage:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get stages for a specific product
    * @param {string} productId - Product ID
    * @returns {Array} - List of stages

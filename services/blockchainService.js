@@ -189,21 +189,50 @@ class BlockchainService {
    */
   async transferProduct(productId, newOwnerId) {
     try {
+      // Kiểm tra kết nối blockchain
+      if (!web3 || !contract) {
+        console.error('Blockchain connection not initialized');
+        throw new Error('Blockchain connection not available');
+      }
+      
+      console.log(`Transferring product ${productId} to new owner ${newOwnerId}`);
+      
       const accounts = await web3.eth.getAccounts();
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No blockchain accounts available');
+      }
       const defaultAccount = accounts[0];
       
+      // Gọi smart contract để chuyển quyền sở hữu
       const result = await contract.methods
         .transferOwnership(productId, newOwnerId)
         .send({ from: defaultAccount, gas: 1000000 });
       
+      console.log('Transfer ownership transaction result:', result);
+      
+      // Kiểm tra event OwnershipTransferred có được emit không
+      let ownershipTransferredEvent = null;
+      if (result.events && result.events.OwnershipTransferred) {
+        ownershipTransferredEvent = result.events.OwnershipTransferred;
+        console.log('OwnershipTransferred event found:', ownershipTransferredEvent);
+      }
+      
       return {
-        transactionHash: result.transactionHash
+        transactionHash: result.transactionHash,
+        event: ownershipTransferredEvent
       };
     } catch (error) {
       console.error('Blockchain Error (transferProduct):', error);
-      return {
-        transactionHash: `mock_tx_${Date.now()}`
-      };
+      
+      // Trong môi trường phát triển, cho phép dùng dữ liệu giả
+      if (process.env.NODE_ENV !== 'production' || process.env.MOCK_BLOCKCHAIN === 'true') {
+        console.warn('Using mock blockchain transaction for development');
+        return {
+          transactionHash: `mock_transfer_tx_${Date.now()}`
+        };
+      }
+      
+      throw error; // Ném lại lỗi để xử lý ở tầng cao hơn
     }
   }
 

@@ -338,19 +338,14 @@ exports.transferOwnership = async (req, res, next) => {
       });
     }
     
-    // Thực hiện chuyển quyền sở hữu
+    // Xác định lý do chuyển quyền sở hữu
     const reason = transferReason === 'other' ? otherReason : transferReason;
-    await Product.transferOwnership(productId, newOwnerId);
     
-    // Ghi nhật ký hoạt động
-    await Activity.addActivity({
-      userId: req.session.userId,
-      type: 'ownership_transferred',
-      entityId: productId,
-      entityName: product.name,
-      entityType: 'product',
-      description: `Đã chuyển quyền sở hữu sản phẩm "${product.name}" cho ${user.name} (${user.role})`
-    });
+    // Thực hiện chuyển quyền sở hữu, truyền thêm lý do
+    await Product.transferOwnership(productId, newOwnerId, reason);
+    
+    // Xóa phần ghi hoạt động ở đây vì đã được xử lý trong model Product.transferOwnership
+    // Việc ghi hoạt động này gây ra hiện tượng ghi 2 lần
     
     // Chuyển hướng đến trang sản phẩm với thông báo thành công
     return res.redirect(`/products?success=Đã chuyển quyền sở hữu sản phẩm cho ${user.name}`);

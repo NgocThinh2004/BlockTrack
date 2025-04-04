@@ -183,70 +183,82 @@
           <button class="btn btn-sm btn-outline-secondary">Xem tất cả</button>
         </div>
         <div class="card-body p-0">
-          <ul class="list-group list-group-flush">
-            <% if (activities && activities.length > 0) { %>
-              <% activities.forEach(activity => { %>
-                <li class="list-group-item">
-                  <div class="d-flex align-items-center">
-                    <div class="activity-icon <%= 
-                      activity.type === 'product_created' ? 'bg-success' : 
-                      activity.type === 'stage_added' && activity.entityName === 'packaging' ? 'bg-info' : 
-                      activity.type === 'stage_added' && activity.entityName === 'distribution' ? 'bg-warning' :
-                      activity.type === 'stage_added' && activity.entityName === 'retail' ? 'bg-primary' :
-                      activity.type === 'qr_generated' ? 'bg-secondary' : 'bg-primary' 
-                    %> text-white rounded-circle p-2 me-3">
-                      <i class="<%= 
-                        activity.type === 'product_created' ? 'fas fa-plus' : 
-                        activity.type === 'stage_added' ? 'fas fa-sync-alt' : 
-                        activity.type === 'qr_generated' ? 'fas fa-qrcode' : 
-                        activity.type === 'product_updated' ? 'fas fa-edit' : 'fas fa-check' 
-                      %>"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                      <p class="mb-0"><%= activity.description %></p>
-                      <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                          <% 
-                            let timestamp = '';
-                            try {
-                              if (activity.timestamp) {
-                                // Kiểm tra nếu là timestamp từ Firebase
-                                if (activity.timestamp.toDate) {
-                                  timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
-                                } 
-                                // Kiểm tra nếu là Date hoặc chuỗi ISO
-                                else if (!isNaN(new Date(activity.timestamp))) {
-                                  timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
+          <div class="activities-container" style="max-height: 400px; overflow-y: auto;">
+            <ul class="list-group list-group-flush">
+              <% if (activities && activities.length > 0) { %>
+                <% activities.slice(0, 5).forEach(activity => { %>
+                  <li class="list-group-item">
+                    <div class="d-flex align-items-center">
+                      <div class="activity-icon <%= 
+                        activity.type === 'product_created' ? 'bg-success' : 
+                        activity.type === 'stage_added' && activity.entityName === 'packaging' ? 'bg-info' : 
+                        activity.type === 'stage_added' && activity.entityName === 'distribution' ? 'bg-warning' :
+                        activity.type === 'stage_added' && activity.entityName === 'retail' ? 'bg-primary' :
+                        activity.type === 'ownership_transferred' ? 'bg-danger' :
+                        activity.type === 'ownership_received' ? 'bg-success' :
+                        activity.type === 'qr_generated' ? 'bg-secondary' : 'bg-primary' 
+                      %> text-white rounded-circle p-2 me-3">
+                        <i class="<%= 
+                          activity.type === 'product_created' ? 'fas fa-plus' : 
+                          activity.type === 'stage_added' ? 'fas fa-sync-alt' : 
+                          activity.type === 'ownership_transferred' ? 'fas fa-exchange-alt' : 
+                          activity.type === 'ownership_received' ? 'fas fa-handshake' : 
+                          activity.type === 'qr_generated' ? 'fas fa-qrcode' : 
+                          activity.type === 'product_updated' ? 'fas fa-edit' : 'fas fa-check' 
+                        %>"></i>
+                      </div>
+                      <div class="flex-grow-1">
+                        <p class="mb-0"><%= activity.description %></p>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <small class="text-muted">
+                            <% 
+                              let timestamp = '';
+                              try {
+                                if (activity.timestamp) {
+                                  // Kiểm tra nếu là timestamp từ Firebase
+                                  if (activity.timestamp.toDate) {
+                                    timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
+                                  } 
+                                  // Kiểm tra nếu là Date hoặc chuỗi ISO
+                                  else if (!isNaN(new Date(activity.timestamp))) {
+                                    timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
+                                  }
                                 }
-                              }
-                            %>
-                            <%= timestamp || 'Không có dữ liệu' %>
-                          <% } catch(e) { %>
-                            Không có dữ liệu
+                              %>
+                                <%= timestamp || 'Không có dữ liệu' %>
+                            <% } catch(e) { %>
+                              Không có dữ liệu
+                            <% } %>
+                          </small>
+                          <% if (activity.entityType === 'stage') { %>
+                            <span class="badge bg-<%= 
+                              activity.entityName === 'production' ? 'primary' : 
+                              activity.entityName === 'packaging' ? 'info' : 
+                              activity.entityName === 'distribution' ? 'warning' : 
+                              activity.entityName === 'retail' ? 'success' : 
+                              activity.entityName === 'sold' ? 'secondary' : 'dark' 
+                            %> rounded-pill">
+                              <%= activity.entityName %>
+                            </span>
+                          <% } else if (activity.type === 'ownership_transferred') { %>
+                            <span class="badge bg-danger rounded-pill">Chuyển quyền</span>
+                          <% } else if (activity.type === 'ownership_received') { %>
+                            <span class="badge bg-success rounded-pill">Nhận quyền</span>
+                          <% } else if (activity.type === 'product_created') { %>
+                            <span class="badge bg-success rounded-pill">Sản phẩm mới</span>
                           <% } %>
-                        </small>
-                        <% if (activity.entityType === 'stage') { %>
-                          <span class="badge bg-<%= 
-                            activity.entityName === 'production' ? 'primary' : 
-                            activity.entityName === 'packaging' ? 'info' : 
-                            activity.entityName === 'distribution' ? 'warning' : 
-                            activity.entityName === 'retail' ? 'success' : 
-                            activity.entityName === 'sold' ? 'secondary' : 'dark' 
-                          %> rounded-pill">
-                            <%= activity.entityName %>
-                          </span>
-                        <% } %>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </li>
+                <% }); %>
+              <% } else { %>
+                <li class="list-group-item text-center py-3">
+                  <p class="text-muted mb-0">Không có hoạt động nào gần đây</p>
                 </li>
-              <% }); %>
-            <% } else { %>
-              <li class="list-group-item text-center py-3">
-                <p class="text-muted mb-0">Không có hoạt động nào gần đây</p>
-              </li>
-            <% } %>
-          </ul>
+              <% } %>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

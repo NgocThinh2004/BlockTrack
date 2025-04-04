@@ -206,9 +206,10 @@ class Product {
    * Transfer product ownership
    * @param {string} productId - Product ID
    * @param {string} newOwnerId - ID of the new owner
+   * @param {string} transferReason - Lý do chuyển quyền sở hữu
    * @returns {boolean} - Success status
    */
-  static async transferOwnership(productId, newOwnerId) {
+  static async transferOwnership(productId, newOwnerId, transferReason = '') {
     try {
       const product = await this.getProductById(productId);
       
@@ -216,72 +217,81 @@ class Product {
         throw new Error('Product not found');
       }
       
-      // Record the transfer on blockchain
+      // Lưu thông tin chủ sở hữu cũ
+      const previousOwnerId = product.ownerId;
+      
+      // Tìm thông tin người nhận nếu có
+      let receiverData = {};
       try {
-        const { transactionHash } = await blockchainService.transferProduct(
+        const User = require('./userModel');
+        const receiver = await User.getUserById(newOwnerId);
+        if (receiver) {
+          receiverData = {
+            receiverName: receiver.name,
+            receiverRole: receiver.role
+          };
+        }
+      } catch (e) {
+        console.warn('Could not get receiver information:', e);
+      }
+      
+      // Record the transfer on blockchain
+      let blockchainResult = null;
+      try {
+        blockchainResult = await blockchainService.transferProduct(
           product.blockchainId, 
           newOwnerId
         );
         
-        // Update in database
-        await productsCollection.doc(productId).update({
-          ownerId: newOwnerId,
-          blockchainTxId: transactionHash,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        console.log('Ownership transferred on blockchain:', blockchainResult);
       } catch (blockchainError) {
         console.error('Error transferring product on blockchain:', blockchainError);
-        
-        // Fall back to just database update
-        await productsCollection.doc(productId).update({
-          ownerId: newOwnerId,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
       }
       
-      return true;
-    } catch (error) {
-      console.error('Error transferring product ownership:', error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Chuyển quyền sở hữu sản phẩm
-   * @param {string} productId - ID sản phẩm
-   * @param {string} newOwnerId - ID chủ sở hữu mới
-   * @returns {boolean} - Status
-   */
-  static async transferOwnership(productId, newOwnerId) {
-    try {
-      // Lấy thông tin sản phẩm
-      const product = await this.getProductById(productId);
-      if (!product) {
-        throw new Error('Sản phẩm không tồn tại');
-      }
-      
-      // Lưu thông tin chủ sở hữu cũ
-      const previousOwnerId = product.ownerId;
-      
-      // Cập nhật chủ sở hữu mới
-      await productsCollection.doc(productId).update({
+      // Update in database
+      const updateData = {
         ownerId: newOwnerId,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
       
-      // Ghi lại hoạt động
+      // Add blockchain transaction hash if available
+      if (blockchainResult && blockchainResult.transactionHash) {
+        updateData.blockchainTxId = blockchainResult.transactionHash;
+      }
+      
+      await productsCollection.doc(productId).update(updateData);
+      
+      // Thêm giai đoạn chuyển quyền sở hữu vào lịch sử sản phẩm
+      try {
+        const ProductStage = require('./stageModel');
+        await ProductStage.addTransferStage(productId, previousOwnerId, newOwnerId, transferReason, receiverData);
+      } catch (stageError) {
+        console.error('Error adding transfer stage:', stageError);
+      }
+      
+      // Ghi nhật ký hoạt động cho người chuyển
       await Activity.addActivity({
         userId: previousOwnerId,
         type: 'ownership_transferred',
         entityId: productId,
         entityName: product.name,
         entityType: 'product',
-        description: `Đã chuyển quyền sở hữu sản phẩm "${product.name}" cho người dùng khác`
+        description: `Đã chuyển quyền sở hữu sản phẩm "${product.name}" cho ${receiverData.receiverName || 'người dùng khác'}`
+      });
+      
+      // Ghi nhật ký hoạt động cho người nhận
+      await Activity.addActivity({
+        userId: newOwnerId,
+        type: 'ownership_received',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã nhận quyền sở hữu sản phẩm "${product.name}"`
       });
       
       return true;
     } catch (error) {
-      console.error('Error transferring ownership:', error);
+      console.error('Error transferring product ownership:', error);
       throw error;
     }
   }
