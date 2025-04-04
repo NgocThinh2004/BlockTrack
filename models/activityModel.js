@@ -15,16 +15,24 @@ class Activity {
    */
   static async addActivity(activityData) {
     try {
+      console.log('Thêm hoạt động mới:', JSON.stringify(activityData));
+      
+      // Validate required fields
+      if (!activityData.userId) {
+        console.error('Lỗi: Thiếu userId khi thêm hoạt động');
+        return {};
+      }
+      
       const activityId = uuidv4();
       
       // Chuẩn bị dữ liệu hoạt động
       const activity = {
         id: activityId,
         userId: activityData.userId,
-        type: activityData.type, // Ví dụ: 'product_created', 'stage_added', etc.
-        entityId: activityData.entityId, // ID của đối tượng liên quan (sản phẩm, giai đoạn...)
-        entityName: activityData.entityName, // Tên của đối tượng liên quan
-        entityType: activityData.entityType, // Loại đối tượng (product, stage)
+        type: activityData.type,
+        entityId: activityData.entityId,
+        entityName: activityData.entityName,
+        entityType: activityData.entityType,
         description: activityData.description,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -32,6 +40,7 @@ class Activity {
       // Lưu vào cơ sở dữ liệu
       await activitiesCollection.doc(activityId).set(activity);
       
+      console.log('Đã thêm hoạt động thành công với ID:', activityId);
       return activity;
     } catch (error) {
       console.error('Lỗi khi thêm hoạt động:', error);
@@ -46,8 +55,10 @@ class Activity {
    * @param {number} limit - Số lượng hoạt động tối đa
    * @returns {Array} - Danh sách hoạt động
    */
-  static async getActivitiesByUser(userId, limit = 5) {
+  static async getActivitiesByUser(userId, limit = 10) { // Tăng giới hạn từ 5 lên 10
     try {
+      console.log(`Đang lấy hoạt động cho người dùng: ${userId}, giới hạn: ${limit}`);
+      
       let snapshot;
       let usingSortedQuery = true;
       
@@ -98,6 +109,7 @@ class Activity {
         activities = activities.slice(0, limit); // Giới hạn kết quả
       }
       
+      console.log(`Đã lấy ${activities.length} hoạt động cho người dùng ${userId}`);
       return activities;
     } catch (error) {
       console.error('Lỗi khi lấy hoạt động:', error);

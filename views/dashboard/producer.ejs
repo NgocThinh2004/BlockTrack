@@ -202,28 +202,41 @@
                         activity.type === 'product_updated' ? 'fas fa-edit' : 'fas fa-check' 
                       %>"></i>
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                       <p class="mb-0"><%= activity.description %></p>
-                      <small class="text-muted">
-                        <% 
-                          let timestamp = '';
-                          try {
-                            if (activity.timestamp) {
-                              // Kiểm tra nếu là timestamp từ Firebase
-                              if (activity.timestamp.toDate) {
-                                timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
-                              } 
-                              // Kiểm tra nếu là Date hoặc chuỗi ISO
-                              else if (!isNaN(new Date(activity.timestamp))) {
-                                timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
+                      <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                          <% 
+                            let timestamp = '';
+                            try {
+                              if (activity.timestamp) {
+                                // Kiểm tra nếu là timestamp từ Firebase
+                                if (activity.timestamp.toDate) {
+                                  timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
+                                } 
+                                // Kiểm tra nếu là Date hoặc chuỗi ISO
+                                else if (!isNaN(new Date(activity.timestamp))) {
+                                  timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
+                                }
                               }
-                            }
-                          %>
-                          <%= timestamp || 'Không có dữ liệu' %>
-                        <% } catch(e) { %>
-                          Không có dữ liệu
+                            %>
+                            <%= timestamp || 'Không có dữ liệu' %>
+                          <% } catch(e) { %>
+                            Không có dữ liệu
+                          <% } %>
+                        </small>
+                        <% if (activity.entityType === 'stage') { %>
+                          <span class="badge bg-<%= 
+                            activity.entityName === 'production' ? 'primary' : 
+                            activity.entityName === 'packaging' ? 'info' : 
+                            activity.entityName === 'distribution' ? 'warning' : 
+                            activity.entityName === 'retail' ? 'success' : 
+                            activity.entityName === 'sold' ? 'secondary' : 'dark' 
+                          %> rounded-pill">
+                            <%= activity.entityName %>
+                          </span>
                         <% } %>
-                      </small>
+                      </div>
                     </div>
                   </div>
                 </li>

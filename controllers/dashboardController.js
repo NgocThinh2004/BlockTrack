@@ -34,15 +34,20 @@ exports.getProducerDashboard = async (req, res, next) => {
     };
     
     // Lấy hoạt động gần đây của người dùng
-    const activities = await Activity.getActivitiesByUser(userId);
-    console.log('User activities:', activities.length);
+    const activities = await Activity.getActivitiesByUser(userId, 10); // Tăng giới hạn lên 10
+    console.log('User activities loaded:', activities.length);
+    
+    // Log ra các hoạt động để debug
+    activities.forEach((activity, index) => {
+      console.log(`Activity ${index + 1}: [${activity.type}] ${activity.description}`);
+    });
     
     res.render('dashboard/producer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities, // Thêm activities vào đây
+      activities,
       title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {

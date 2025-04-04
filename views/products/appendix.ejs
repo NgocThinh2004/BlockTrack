@@ -1,0 +1,50 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="mb-0">Thêm phụ lục cho sản phẩm</h3>
+        </div>
+        <div class="card-body">
+          <% if (locals.error) { %>
+            <div class="alert alert-danger">
+              <%= error %>
+            </div>
+          <% } %>
+          
+          <form action="/products/<%= product.id %>/appendix" method="POST">
+            <div class="mb-3">
+              <label for="title" class="form-label">Tiêu đề phụ lục</label>
+              <input type="text" class="form-control" id="title" name="title" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="type" class="form-label">Loại phụ lục</label>
+              <select class="form-select" id="type" name="type" required>
+                <option value="correction">Điều chỉnh thông tin</option>
+                <option value="addition">Bổ sung thông tin</option>
+                <option value="clarification">Làm rõ thông tin</option>
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="content" class="form-label">Nội dung</label>
+              <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+              <div class="form-text">Mô tả chi tiết thông tin cần bổ sung hoặc điều chỉnh.</div>
+            </div>
+            
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              Lưu ý: Phụ lục này sẽ được thêm vào sản phẩm mà không thay đổi thông tin gốc đã được xác thực trên blockchain.
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+              <a href="/products/<%= product.id %>" class="btn btn-secondary">Quay lại</a>
+              <button type="submit" class="btn btn-primary">Lưu phụ lục</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

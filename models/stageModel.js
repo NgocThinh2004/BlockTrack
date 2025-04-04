@@ -49,6 +49,17 @@ class ProductStage {
       
       // Ghi lại hoạt động
       const product = await Product.getProductById(stageData.productId);
+      console.log(`Thêm hoạt động giai đoạn cho sản phẩm: ${product ? product.name : 'Unknown'}, userId: ${stageData.handledBy}`);
+      
+      // Đảm bảo có userId hợp lệ
+      if (!stageData.handledBy) {
+        console.warn('Warning: Missing handledBy (userId) when adding stage activity');
+        if (product && product.ownerId) {
+          console.log('Using product ownerId as fallback for activity');
+          stageData.handledBy = product.ownerId;
+        }
+      }
+      
       await Activity.addActivity({
         userId: stageData.handledBy,
         type: 'stage_added',
