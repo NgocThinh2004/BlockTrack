@@ -83,9 +83,10 @@ class ProductStage {
    * @param {string} newOwnerId - New owner ID
    * @param {string} reason - Transfer reason
    * @param {Object} receiverData - Information about the receiver
+   * @param {string} newStage - New stage for the product (optional)
    * @returns {Object} - Created stage
    */
-  static async addTransferStage(productId, previousOwnerId, newOwnerId, reason = '', receiverData = {}) {
+  static async addTransferStage(productId, previousOwnerId, newOwnerId, reason = '', receiverData = {}, newStage = '') {
     try {
       const stageId = uuidv4();
       
@@ -101,11 +102,21 @@ class ProductStage {
         }
       }
       
+      // Xác định stageName dựa trên vai trò người nhận
+      let actualStageName = 'ownership_transfer';
+      if (newStage) {
+        actualStageName = newStage;
+      } else if (receiverData.receiverRole === 'distributor') {
+        actualStageName = 'distribution';
+      } else if (receiverData.receiverRole === 'retailer') {
+        actualStageName = 'retail';
+      }
+      
       // Prepare stage data 
       const stage = {
         id: stageId,
         productId: productId,
-        stageName: 'ownership_transfer',
+        stageName: actualStageName,
         description: description,
         location: 'N/A', // Vị trí không áp dụng cho chuyển quyền sở hữu
         previousOwnerId: previousOwnerId,
@@ -119,7 +130,7 @@ class ProductStage {
       try {
         const { transactionHash } = await blockchainService.addStage({
           ...stage,
-          stageName: 'ownership_transfer',
+          stageName: stage.stageName,
           description: description
         });
         stage.blockchainTxId = transactionHash;

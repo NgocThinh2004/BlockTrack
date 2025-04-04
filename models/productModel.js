@@ -222,6 +222,7 @@ class Product {
       
       // Tìm thông tin người nhận nếu có
       let receiverData = {};
+      let newStage = '';
       try {
         const User = require('./userModel');
         const receiver = await User.getUserById(newOwnerId);
@@ -230,6 +231,13 @@ class Product {
             receiverName: receiver.name,
             receiverRole: receiver.role
           };
+          
+          // Cập nhật trạng thái dựa trên vai trò người nhận
+          if (receiver.role === 'distributor') {
+            newStage = 'distribution';
+          } else if (receiver.role === 'retailer') {
+            newStage = 'retail';
+          }
         }
       } catch (e) {
         console.warn('Could not get receiver information:', e);
@@ -259,12 +267,17 @@ class Product {
         updateData.blockchainTxId = blockchainResult.transactionHash;
       }
       
+      // Cập nhật trạng thái sản phẩm nếu xác định được vai trò người nhận
+      if (newStage) {
+        updateData.currentStage = newStage;
+      }
+      
       await productsCollection.doc(productId).update(updateData);
       
       // Thêm giai đoạn chuyển quyền sở hữu vào lịch sử sản phẩm
       try {
         const ProductStage = require('./stageModel');
-        await ProductStage.addTransferStage(productId, previousOwnerId, newOwnerId, transferReason, receiverData);
+        await ProductStage.addTransferStage(productId, previousOwnerId, newOwnerId, transferReason, receiverData, newStage);
       } catch (stageError) {
         console.error('Error adding transfer stage:', stageError);
       }
@@ -445,6 +458,60 @@ class Product {
         success: false,
         error: error.message
       };
+    }
+  }
+
+  /**
+   * Get products transferred by a specific user (for dashboard statistics)
+   * @param {string} userId - User ID who transferred the products
+   * @returns {Array} - List of transferred products
+   */
+  static async getProductsTransferredBy(userId) {
+    try {
+      // Truy vấn các giai đoạn chuyển giao quyền sở hữu của người dùng
+      const stagesCollection = firebase.firestore().collection('productStages');
+      
+      // Lấy cả giai đoạn chuyển quyền sở hữu và giai đoạn chuyển sang distribution
+      const transferStagesSnapshot = await stagesCollection
+        .where('previousOwnerId', '==', userId)
+        .get();
+      
+      if (transferStagesSnapshot.empty) {
+        return [];
+      }
+      
+      // Lọc các giai đoạn liên quan đến chuyển quyền sở hữu hoặc chuyển sang distribution
+      const relevantStages = transferStagesSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        return data.stageName === 'ownership_transfer' || 
+               data.stageName === 'distribution';
+      });
+      
+      if (relevantStages.length === 0) {
+        return [];
+      }
+      
+      // Lấy các sản phẩm IDs từ các giai đoạn chuyển nhượng
+      const productIds = [...new Set(relevantStages.map(doc => doc.data().productId))];
+      
+      // Nếu không có ID sản phẩm, trả về mảng rỗng
+      if (productIds.length === 0) {
+        return [];
+      }
+      
+      // Lấy thông tin các sản phẩm đã chuyển
+      const transferredProducts = [];
+      for (const productId of productIds) {
+        const product = await this.getProductById(productId);
+        if (product) {
+          transferredProducts.push(product);
+        }
+      }
+      
+      return transferredProducts;
+    } catch (error) {
+      console.error('Error getting transferred products:', error);
+      return [];
     }
   }
 }

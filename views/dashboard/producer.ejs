@@ -17,7 +17,7 @@
               <h2 class="mt-2 mb-0"><%= productsCount %></h2>
             </div>
             <div>
-              <i class="fas fa-box-open fa-3x opacity-50"></i>
+              <i class="fas fa-box fa-3x opacity-50"></i>
             </div>
           </div>
         </div>
@@ -30,10 +30,10 @@
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <h6 class="mb-0">Đang sản xuất</h6>
-              <h2 class="mt-2 mb-0"><%= productsByStage.production %></h2>
+              <h2 class="mt-2 mb-0"><%= productsByStage.production || 0 %></h2>
             </div>
             <div>
-              <i class="fas fa-cogs fa-3x opacity-50"></i>
+              <i class="fas fa-industry fa-3x opacity-50"></i>
             </div>
           </div>
         </div>
@@ -45,11 +45,11 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <h6 class="mb-0">Đang vận chuyển</h6>
-              <h2 class="mt-2 mb-0"><%= productsByStage.distribution %></h2>
+              <h6 class="mb-0">Đóng gói</h6>
+              <h2 class="mt-2 mb-0"><%= productsByStage.packaging || 0 %></h2>
             </div>
             <div>
-              <i class="fas fa-truck fa-3x opacity-50"></i>
+              <i class="fas fa-box-open fa-3x opacity-50"></i>
             </div>
           </div>
         </div>
@@ -61,11 +61,11 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <h6 class="mb-0">Đã bán</h6>
-              <h2 class="mt-2 mb-0"><%= productsByStage.sold || 0 %></h2>
+              <h6 class="mb-0">Đã giao vận chuyển</h6>
+              <h2 class="mt-2 mb-0"><%= productsByStage.distribution || 0 %></h2>
             </div>
             <div>
-              <i class="fas fa-check-circle fa-3x opacity-50"></i>
+              <i class="fas fa-truck fa-3x opacity-50"></i>
             </div>
           </div>
         </div>
@@ -283,21 +283,17 @@
       {
         type: 'doughnut',
         data: {
-          labels: ['Sản xuất', 'Đóng gói', 'Phân phối', 'Bán lẻ', 'Đã bán'],
+          labels: ['Sản xuất', 'Đóng gói', 'Đã giao vận chuyển'],
           datasets: [{
             data: [
               <%= productsByStage.production || 0 %>, 
               <%= productsByStage.packaging || 0 %>, 
-              <%= productsByStage.distribution || 0 %>, 
-              <%= productsByStage.retail || 0 %>, 
-              <%= productsByStage.sold || 0 %>
+              <%= productsByStage.distribution || 0 %>
             ],
             backgroundColor: [
               '#0d6efd', 
-              '#0dcaf0', 
               '#ffc107', 
-              '#198754', 
-              '#6c757d'
+              '#198754'
             ]
           }]
         },

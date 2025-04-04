@@ -35,10 +35,43 @@ exports.getProducerDashboard = async (req, res, next) => {
     const productsByStage = {
       production: products.filter(p => p.currentStage === 'production').length,
       packaging: products.filter(p => p.currentStage === 'packaging').length,
-      distribution: products.filter(p => p.currentStage === 'distribution').length,
-      retail: products.filter(p => p.currentStage === 'retail').length,
-      sold: products.filter(p => p.currentStage === 'sold').length
+      distribution: 0 // Sẽ được cập nhật bên dưới
     };
+    
+    // Lấy tất cả sản phẩm đã từng thuộc về người dùng này để đếm sản phẩm đã giao cho vận chuyển
+    let transferredProducts = [];
+    try {
+      transferredProducts = await Product.getProductsTransferredBy(userId);
+      console.log(`[DASHBOARD] Found ${transferredProducts.length} transferred products for user ${userId}`);
+    } catch (error) {
+      console.error('Error fetching transferred products:', error);
+      transferredProducts = [];
+    }
+    
+    // Phương pháp 1: Đếm trực tiếp từ các sản phẩm đã chuyển giao
+    // Lọc các sản phẩm hiện đang ở trạng thái "distribution"
+    const distributionProducts = transferredProducts.filter(p => p.currentStage === 'distribution');
+    productsByStage.distribution = distributionProducts.length;
+    console.log(`[DASHBOARD] Distribution products: ${productsByStage.distribution}`);
+
+    // Phương pháp 2: Kiểm tra từ bảng giai đoạn sản phẩm (nếu số lượng vẫn không chính xác)
+    if (productsByStage.distribution === 0) {
+      try {
+        // Truy vấn trực tiếp từ bảng productStages
+        const stagesCollection = firebase.firestore().collection('productStages');
+        const distributionStagesSnapshot = await stagesCollection
+          .where('previousOwnerId', '==', userId)
+          .where('stageName', '==', 'distribution')
+          .get();
+        
+        // Lấy số lượng các sản phẩm đã chuyển sang giai đoạn vận chuyển
+        const distributionStagesCount = distributionStagesSnapshot.empty ? 0 : distributionStagesSnapshot.size;
+        productsByStage.distribution = Math.max(productsByStage.distribution, distributionStagesCount);
+        console.log(`[DASHBOARD] Distribution stages count: ${distributionStagesCount}`);
+      } catch (error) {
+        console.error('Error counting distribution stages:', error);
+      }
+    }
     
     // Lấy hoạt động gần đây với số lượng tăng lên
     // Lấy 15 hoạt động để có dữ liệu dự phòng, nhưng view chỉ hiển thị 5
@@ -50,7 +83,7 @@ exports.getProducerDashboard = async (req, res, next) => {
       products,
       productsByStage,
       productsCount: products.length,
-      activities,
+      activities: activities || [],
       title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {
