@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const stageRoutes = require('./stageRoutes');
+
 /**
  * Route xử lý trang chủ và các trang chung
  */
@@ -15,5 +17,7 @@ router.get('/', (req, res) => {
 router.get('/image-test', (req, res) => {
   res.render('image-test', { title: 'Image Test' });
 });
+
+router.use('/stages', stageRoutes);
 
 module.exports = router;

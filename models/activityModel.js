@@ -1,5 +1,4 @@
-const firebase = require('firebase/app');
-require('firebase/firestore');
+const firebase = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 
 // Reference to activities collection
@@ -36,7 +35,8 @@ class Activity {
       return activity;
     } catch (error) {
       console.error('Lỗi khi thêm hoạt động:', error);
-      throw error;
+      // Return empty object instead of throwing to prevent app crash
+      return {};
     }
   }
   

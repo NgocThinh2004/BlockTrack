@@ -10,6 +10,9 @@ ensureDirs();
 // Load environment variables
 dotenv.config();
 
+// Khởi tạo Firebase TRƯỚC khi import app
+require('./config/firebase');
+
 // Import the app
 const app = require('./app');
 

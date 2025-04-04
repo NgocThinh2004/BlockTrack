@@ -1,14 +1,11 @@
 const express = require('express');
 const path = require('path');
-const dotenv = require('dotenv');
 const expressLayouts = require('express-ejs-layouts');
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
 const cookieParser = require('cookie-parser');
 const ensureDirs = require('./utils/ensureDirs');
 
-// Load environment variables
-dotenv.config();
+// Đảm bảo Firebase đã được khởi tạo
+const firebase = require('./config/firebase');
 
 // Create Express app
 const app = express();
@@ -19,24 +16,9 @@ ensureDirs();
 // Cookie parser middleware
 app.use(cookieParser());
 
-// Session configuration
-const sessionConfig = {
-  store: new FileStore({
-    path: './sessions',
-    ttl: 86400,
-    retries: 0,
-    logFn: function() {} // Disable verbose logging
-  }),
-  secret: process.env.SESSION_SECRET || 'blockchain-secure-secret',
-  name: 'blocktrack.sid',
-  resave: true,  // Change to true to ensure session is saved
-  saveUninitialized: true,  // Change to true
-  cookie: { 
-    secure: false,  // Set to false to work without HTTPS in development
-    maxAge: 24 * 60 * 60 * 1000
-  }
-};
-app.use(session(sessionConfig));
+// Configure session
+const configureSession = require('./config/session');
+configureSession(app);
 
 // Add session debugging middleware
 app.use((req, res, next) => {
@@ -90,11 +72,13 @@ try {
   const authRoutes = require('./routes/authRoutes');
   const productRoutes = require('./routes/productRoutes');
   const trackRoutes = require('./routes/trackRoutes');
+  const stageRoutes = require('./routes/stageRoutes');
 
   app.use('/', indexRoutes);
   app.use('/auth', authRoutes);
   app.use('/products', productRoutes);
   app.use('/track', trackRoutes);
+  app.use('/stages', stageRoutes);
   
   // Optionally load other routes if they exist
   try {
@@ -104,7 +88,6 @@ try {
   } catch (err) {
     console.log('Dashboard routes not loaded:', err.message);
   }
-
 } catch (err) {
   console.error('Error loading routes:', err);
   // Provide a simple home route in case routes fail to load
