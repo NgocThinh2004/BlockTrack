@@ -247,6 +247,46 @@ class Product {
   }
   
   /**
+   * Chuyển quyền sở hữu sản phẩm
+   * @param {string} productId - ID sản phẩm
+   * @param {string} newOwnerId - ID chủ sở hữu mới
+   * @returns {boolean} - Status
+   */
+  static async transferOwnership(productId, newOwnerId) {
+    try {
+      // Lấy thông tin sản phẩm
+      const product = await this.getProductById(productId);
+      if (!product) {
+        throw new Error('Sản phẩm không tồn tại');
+      }
+      
+      // Lưu thông tin chủ sở hữu cũ
+      const previousOwnerId = product.ownerId;
+      
+      // Cập nhật chủ sở hữu mới
+      await productsCollection.doc(productId).update({
+        ownerId: newOwnerId,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Ghi lại hoạt động
+      await Activity.addActivity({
+        userId: previousOwnerId,
+        type: 'ownership_transferred',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã chuyển quyền sở hữu sản phẩm "${product.name}" cho người dùng khác`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error transferring ownership:', error);
+      throw error;
+    }
+  }
+  
+  /**
    * Get products by owner ID
    * @param {string} ownerId - Owner's user ID
    * @returns {Array} - List of products

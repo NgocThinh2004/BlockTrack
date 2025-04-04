@@ -25,4 +25,7 @@ router.post('/:id/edit', isAuthenticated, loadUser, productController.updateProd
 // Thử lại kết nối blockchain
 router.post('/:id/retry-blockchain', isAuthenticated, loadUser, productController.retryBlockchain);
 
+// Chuyển quyền sở hữu sản phẩm
+router.post('/:id/transfer', isAuthenticated, productController.transferOwnership);
+
 module.exports = router;

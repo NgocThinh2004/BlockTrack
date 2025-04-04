@@ -19,14 +19,20 @@
               <label for="stageName" class="form-label">Giai đoạn</label>
               <select class="form-select" id="stageName" name="stageName" required>
                 <option value="" selected disabled>Chọn giai đoạn</option>
-                <% if (product.currentStage === 'production') { %>
-                  <option value="packaging">Đóng gói</option>
-                <% } else if (product.currentStage === 'packaging') { %>
-                  <option value="distribution">Vận chuyển / Phân phối</option>
-                <% } else if (product.currentStage === 'distribution') { %>
-                  <option value="retail">Bán lẻ</option>
-                <% } else if (product.currentStage === 'retail') { %>
-                  <option value="sold">Đã bán</option>
+                <% if (userRole === 'producer') { %>
+                  <% if (product.currentStage === 'production') { %>
+                    <option value="packaging">Đóng gói</option>
+                  <% } %>
+                <% } else if (userRole === 'distributor') { %>
+                  <% if (product.currentStage === 'packaging') { %>
+                    <option value="distribution">Vận chuyển / Phân phối</option>
+                  <% } %>
+                <% } else if (userRole === 'retailer') { %>
+                  <% if (product.currentStage === 'distribution') { %>
+                    <option value="retail">Bán lẻ</option>
+                  <% } else if (product.currentStage === 'retail') { %>
+                    <option value="sold">Đã bán</option>
+                  <% } %>
                 <% } %>
               </select>
             </div>

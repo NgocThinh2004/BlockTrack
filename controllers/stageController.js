@@ -19,7 +19,8 @@ exports.showAddStageForm = async (req, res, next) => {
     console.log('Quyền sản phẩm - debug:', {
       currentUserId: req.user?.id || 'không có user',
       productOwnerId: product.ownerId,
-      sessionUserId: req.session.userId,
+      userRole: req.user?.role,
+      currentStage: product.currentStage,
       isOwner: req.user?.id === product.ownerId
     });
     
@@ -28,12 +29,35 @@ exports.showAddStageForm = async (req, res, next) => {
       return res.status(403).render('error', { message: 'Bạn không có quyền thêm giai đoạn cho sản phẩm này' });
     }
     
+    // Kiểm tra quyền theo vai trò
+    let canAddStage = false;
+    
+    if (req.user.role === 'producer' && 
+        ['production', 'packaging'].includes(product.currentStage)) {
+      canAddStage = true;
+    } 
+    else if (req.user.role === 'distributor' && 
+             product.currentStage === 'packaging') {
+      canAddStage = true;
+    }
+    else if (req.user.role === 'retailer' && 
+             ['distribution', 'retail'].includes(product.currentStage)) {
+      canAddStage = true;
+    }
+    
+    if (!canAddStage) {
+      return res.status(403).render('error', { 
+        message: 'Vai trò của bạn không được phép thêm giai đoạn này' 
+      });
+    }
+    
     const stages = await ProductStage.getStagesByProductId(productId);
     
     res.render('stages/create', { 
       product, 
       stages,
-      title: `Thêm giai đoạn: ${product.name}`
+      title: `Thêm giai đoạn: ${product.name}`,
+      userRole: req.user.role
     });
   } catch (error) {
     next(error);

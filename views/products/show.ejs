@@ -69,21 +69,24 @@
           <% } %>
           
           <% if (locals.user && locals.user.id === product.ownerId) { %>
-            <div class="d-flex mt-4">
-              <% if (!product.blockchainId || product.blockchainId === 'Đang xử lý') { %>
-                <!-- Chỉ cho phép chỉnh sửa khi sản phẩm CHƯA được đưa lên blockchain -->
-                <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">Chỉnh sửa</a>
-              <% } else { %>
-                <!-- Hiển thị nút bị vô hiệu hóa với tooltip để giải thích -->
-                <button class="btn btn-secondary me-2" disabled data-bs-toggle="tooltip" 
-                  data-bs-title="Không thể chỉnh sửa thông tin sản phẩm đã được xác thực trên blockchain">
-                  <i class="fas fa-lock me-1"></i> Đã khóa
-                </button>
-              <% } %>
-              <% if (!qrCode) { %>
-                <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2">Tạo mã QR</a>
-              <% } %>
-            </div>
+            <% if (!product.blockchainId || product.blockchainId === 'Đang xử lý') { %>
+              <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-1"></i> Chỉnh sửa
+              </a>
+            <% } else { %>
+              <!-- Hiển thị nút bị vô hiệu hóa với tooltip để giải thích -->
+              <button class="btn btn-secondary me-2" disabled data-bs-toggle="tooltip" 
+                data-bs-title="Không thể chỉnh sửa thông tin sản phẩm đã được xác thực trên blockchain">
+                <i class="fas fa-lock me-1"></i> Đã khóa
+              </button>
+            <% } %>
+            <% if (!qrCode) { %>
+              <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2">Tạo mã QR</a>
+            <% } %>
+            <!-- Thêm nút chuyển quyền sở hữu -->
+            <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#transferOwnershipModal">
+              <i class="fas fa-exchange-alt me-1"></i> Chuyển quyền sở hữu
+            </button>
           <% } %>
           
           <% if (locals.user && product.ownerId === locals.user.id) { %>
@@ -211,6 +214,117 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Chuyển quyền sở hữu -->
+<div class="modal fade" id="transferOwnershipModal" tabindex="-1" aria-labelledby="transferOwnershipModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="transferOwnershipModalLabel">Chuyển quyền sở hữu sản phẩm</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/products/<%= product.id %>/transfer" method="POST">
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i> 
+            Lưu ý: Sau khi chuyển quyền sở hữu, bạn sẽ không còn quyền quản lý sản phẩm này nữa.
+          </div>
+          
+          <div class="mb-3">
+            <label for="recipientType" class="form-label">Chọn người nhận</label>
+            <select class="form-select" id="recipientType" name="recipientType" required>
+              <option value="" selected disabled>-- Chọn loại người nhận --</option>
+              <option value="email">Theo email</option>
+              <option value="wallet">Theo địa chỉ ví</option>
+            </select>
+          </div>
+          
+          <div class="mb-3" id="emailInputGroup" style="display:none;">
+            <label for="recipientEmail" class="form-label">Email người nhận</label>
+            <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" placeholder="Nhập email người nhận">
+            <div class="form-text">Nhập email của người dùng đã đăng ký trong hệ thống</div>
+          </div>
+          
+          <div class="mb-3" id="walletInputGroup" style="display:none;">
+            <label for="recipientWallet" class="form-label">Địa chỉ ví người nhận</label>
+            <input type="text" class="form-control" id="recipientWallet" name="recipientWallet" placeholder="0x...">
+            <div class="form-text">Nhập địa chỉ ví MetaMask của người nhận</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="transferReason" class="form-label">Lý do chuyển</label>
+            <select class="form-select" id="transferReason" name="transferReason" required>
+              <option value="" selected disabled>-- Chọn lý do --</option>
+              <option value="to_distributor">Chuyển cho nhà phân phối</option>
+              <option value="to_retailer">Chuyển cho nhà bán lẻ</option>
+              <option value="other">Lý do khác</option>
+            </select>
+          </div>
+          
+          <div class="mb-3" id="otherReasonGroup" style="display:none;">
+            <label for="otherReason" class="form-label">Lý do khác</label>
+            <textarea class="form-control" id="otherReason" name="otherReason" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" class="btn btn-warning">Chuyển quyền sở hữu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Script để xử lý hiển thị các trường nhập liệu trong modal
+  document.addEventListener('DOMContentLoaded', function() {
+    const recipientTypeSelect = document.getElementById('recipientType');
+    const emailInputGroup = document.getElementById('emailInputGroup');
+    const walletInputGroup = document.getElementById('walletInputGroup');
+    const transferReasonSelect = document.getElementById('transferReason');
+    const otherReasonGroup = document.getElementById('otherReasonGroup');
+    
+    // Xử lý hiển thị trường nhập email hoặc ví
+    if (recipientTypeSelect) {
+      recipientTypeSelect.addEventListener('change', function() {
+        if (this.value === 'email') {
+          emailInputGroup.style.display = 'block';
+          walletInputGroup.style.display = 'none';
+          document.getElementById('recipientWallet').removeAttribute('required');
+          document.getElementById('recipientEmail').setAttribute('required', 'required');
+        } else if (this.value === 'wallet') {
+          walletInputGroup.style.display = 'block';
+          emailInputGroup.style.display = 'none';
+          document.getElementById('recipientEmail').removeAttribute('required');
+          document.getElementById('recipientWallet').setAttribute('required', 'required');
+        }
+      });
+    }
+    
+    // Xử lý hiển thị trường nhập lý do khác
+    if (transferReasonSelect) {
+      transferReasonSelect.addEventListener('change', function() {
+        if (this.value === 'other') {
+          otherReasonGroup.style.display = 'block';
+          document.getElementById('otherReason').setAttribute('required', 'required');
+        } else {
+          otherReasonGroup.style.display = 'none';
+          document.getElementById('otherReason').removeAttribute('required');
+        }
+      });
+    }
+    
+    // Đảm bảo form không gặp vấn đề với Promise
+    const transferForm = document.querySelector('#transferOwnershipModal form');
+    if (transferForm) {
+      transferForm.addEventListener('submit', function(e) {
+        // Không cần e.preventDefault() vì chúng ta muốn form submit bình thường
+        // Nhưng không return asynchronous promise trong event handler
+        console.log('Transfer form submitting...');
+      });
+    }
+  });
+</script>
 
 <style>
   .timeline {

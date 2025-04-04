@@ -1,6 +1,8 @@
 const Product = require('../models/productModel');
-const QRCode = require('../models/qrCodeModel');
-const ProductStage = require('../models/stageModel');
+const User = require('../models/userModel'); // Thêm import User model
+const QRCode = require('../models/qrCodeModel'); // Thêm import QRCode model
+const Activity = require('../models/activityModel'); // Thêm import Activity model
+const ProductStage = require('../models/stageModel'); // Thêm import này
 
 /**
  * Controller xử lý sản phẩm
@@ -252,6 +254,108 @@ exports.retryBlockchain = async (req, res, next) => {
     
     res.redirect(`/products/${productId}`);
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Hiển thị form chuyển quyền sở hữu sản phẩm
+ */
+exports.showTransferOwnership = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Kiểm tra quyền sở hữu
+    if (product.ownerId !== req.session.userId) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền chuyển quyền sở hữu sản phẩm này' 
+      });
+    }
+    
+    res.render('products/transfer', { product, title: `Chuyển quyền sở hữu: ${product.name}` });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Xử lý chuyển quyền sở hữu sản phẩm
+ */
+exports.transferOwnership = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Kiểm tra quyền sở hữu
+    if (product.ownerId !== req.session.userId) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền chuyển quyền sở hữu sản phẩm này' 
+      });
+    }
+    
+    // Lấy thông tin người nhận
+    const { recipientType, recipientEmail, recipientWallet, transferReason, otherReason } = req.body;
+    console.log('Transfer ownership request:', { recipientType, recipientEmail, recipientWallet, transferReason });
+    
+    let newOwnerId = null;
+    let user = null;
+    
+    // Tìm người nhận theo email hoặc địa chỉ ví
+    if (recipientType === 'email' && recipientEmail) {
+      user = await User.getUserByEmail(recipientEmail);
+      if (!user) {
+        return res.status(404).render('products/show', { 
+          product, 
+          error: 'Không tìm thấy người dùng với email này',
+          qrCode: await QRCode.getQRCodeByProductId(productId)
+        });
+      }
+      newOwnerId = user.id;
+    } else if (recipientType === 'wallet' && recipientWallet) {
+      user = await User.getUserByWalletAddress(recipientWallet);
+      if (!user) {
+        return res.status(404).render('products/show', { 
+          product, 
+          error: 'Không tìm thấy người dùng với địa chỉ ví này',
+          qrCode: await QRCode.getQRCodeByProductId(productId)
+        });
+      }
+      newOwnerId = user.id;
+    } else {
+      return res.status(400).render('products/show', { 
+        product, 
+        error: 'Vui lòng cung cấp thông tin người nhận',
+        qrCode: await QRCode.getQRCodeByProductId(productId)
+      });
+    }
+    
+    // Thực hiện chuyển quyền sở hữu
+    const reason = transferReason === 'other' ? otherReason : transferReason;
+    await Product.transferOwnership(productId, newOwnerId);
+    
+    // Ghi nhật ký hoạt động
+    await Activity.addActivity({
+      userId: req.session.userId,
+      type: 'ownership_transferred',
+      entityId: productId,
+      entityName: product.name,
+      entityType: 'product',
+      description: `Đã chuyển quyền sở hữu sản phẩm "${product.name}" cho ${user.name} (${user.role})`
+    });
+    
+    // Chuyển hướng đến trang sản phẩm với thông báo thành công
+    return res.redirect(`/products?success=Đã chuyển quyền sở hữu sản phẩm cho ${user.name}`);
+  } catch (error) {
+    console.error('Error transferring product ownership:', error);
     next(error);
   }
 };
