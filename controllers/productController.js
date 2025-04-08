@@ -13,15 +13,41 @@ exports.getAllProducts = async (req, res, next) => {
     const search = req.query.search || '';
     const stage = req.query.stage || '';
     const sort = req.query.sort || 'createdAt';
-
-    let products = [];
+    const showMineOnly = req.query.mine === 'true';
     
-    // Nếu có tìm kiếm
-    if (search) {
+    let products = [];
+    const userId = req.session?.userId;
+    
+    // Nếu đăng nhập, hiển thị sản phẩm liên quan đến người dùng
+    if (userId) {
+      if (showMineOnly) {
+        // Chỉ hiển thị sản phẩm hiện tại của người dùng
+        products = await Product.getProductsByOwner(userId);
+      } else {
+        // Hiển thị cả sản phẩm hiện tại và sản phẩm đã từng thuộc về người dùng
+        const currentProducts = await Product.getProductsByOwner(userId);
+        const transferredProducts = await Product.getProductsTransferredBy(userId);
+        
+        // Tạo Map với ID sản phẩm làm key để dễ tra cứu và gộp danh sách
+        const productMap = new Map();
+        
+        // Thêm sản phẩm đã chuyển giao vào map trước (ưu tiên thấp hơn)
+        transferredProducts.forEach(product => {
+          productMap.set(product.id, product);
+        });
+        
+        // Thêm sản phẩm hiện tại vào map (ưu tiên cao hơn, sẽ ghi đè)
+        currentProducts.forEach(product => {
+          productMap.set(product.id, product);
+        });
+        
+        // Chuyển map thành mảng
+        products = Array.from(productMap.values());
+      }
+    } 
+    // Không đăng nhập thì chỉ cho phép tìm kiếm
+    else if (search) {
       products = await Product.searchProducts(search);
-    } else {
-      // Lấy tất cả sản phẩm
-      products = await Product.getAllProducts();
     }
 
     // Lọc theo giai đoạn nếu có
@@ -42,11 +68,12 @@ exports.getAllProducts = async (req, res, next) => {
     });
 
     res.render('products/index', { 
-      title: 'Danh sách sản phẩm',
+      title: showMineOnly ? 'Sản phẩm hiện tại của tôi' : 'Tất cả sản phẩm liên quan đến tôi',
       products,
       currentSearch: search,
       currentStage: stage,
-      currentSort: sort
+      currentSort: sort,
+      showMineOnly: showMineOnly
     });
   } catch (error) {
     next(error);
