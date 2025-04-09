@@ -28,28 +28,42 @@ exports.getProducerDashboard = async (req, res, next) => {
     }
     
     // Lấy sản phẩm từ database
-    const products = await Product.getProductsByOwner(userId);
-    console.log(`[DASHBOARD] Found ${products.length} products for user ${userId}`);
+    const currentProducts = await Product.getProductsByOwner(userId);
+    const transferredProducts = await Product.getProductsTransferredBy(userId);
+    
+    // Kết hợp cả sản phẩm hiện tại và sản phẩm đã chuyển quyền sở hữu
+    const productMap = new Map();
+    
+    // Thêm sản phẩm đã chuyển giao vào map
+    transferredProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    
+    // Thêm sản phẩm hiện tại vào map (sẽ ghi đè sản phẩm đã chuyển nếu trùng id)
+    currentProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    
+    // Chuyển map thành mảng
+    const products = Array.from(productMap.values());
+    
+    // Sắp xếp theo thời gian tạo giảm dần (mới nhất lên đầu)
+    products.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
+    
+    console.log(`[DASHBOARD] Found ${products.length} total products (${currentProducts.length} current, ${transferredProducts.length} transferred) for user ${userId}`);
     
     // Đếm số lượng sản phẩm theo giai đoạn
     const productsByStage = {
-      production: products.filter(p => p.currentStage === 'production').length,
-      packaging: products.filter(p => p.currentStage === 'packaging').length,
+      production: currentProducts.filter(p => p.currentStage === 'production').length,
+      packaging: currentProducts.filter(p => p.currentStage === 'packaging').length,
       distribution: 0 // Sẽ được cập nhật bên dưới
     };
     
-    // Lấy tất cả sản phẩm đã từng thuộc về người dùng này để đếm sản phẩm đã giao cho vận chuyển
-    let transferredProducts = [];
-    try {
-      transferredProducts = await Product.getProductsTransferredBy(userId);
-      console.log(`[DASHBOARD] Found ${transferredProducts.length} transferred products for user ${userId}`);
-    } catch (error) {
-      console.error('Error fetching transferred products:', error);
-      transferredProducts = [];
-    }
-    
     // Phương pháp 1: Đếm trực tiếp từ các sản phẩm đã chuyển giao
-    // Lọc các sản phẩm hiện đang ở trạng thái "distribution"
     const distributionProducts = transferredProducts.filter(p => p.currentStage === 'distribution');
     productsByStage.distribution = distributionProducts.length;
     console.log(`[DASHBOARD] Distribution products: ${productsByStage.distribution}`);
@@ -81,7 +95,7 @@ exports.getProducerDashboard = async (req, res, next) => {
       user,
       products,
       productsByStage,
-      productsCount: products.length,
+      productsCount: currentProducts.length, // Giữ nguyên chỉ đếm sản phẩm hiện tại cho tổng sản phẩm
       activities: activities || [], // Đảm bảo luôn có một mảng, tránh lỗi
       title: 'Nhà sản xuất Dashboard'
     });
@@ -103,13 +117,31 @@ exports.getDistributorDashboard = async (req, res, next) => {
       return res.status(403).redirect('/auth/login');
     }
     
-    // Lấy sản phẩm từ database
-    const products = await Product.getProductsByOwner(userId);
+    // Lấy sản phẩm từ database - kết hợp cả hiện tại và đã chuyển
+    const currentProducts = await Product.getProductsByOwner(userId);
+    const transferredProducts = await Product.getProductsTransferredBy(userId);
     
-    // Đếm số lượng sản phẩm theo giai đoạn
+    // Kết hợp sản phẩm
+    const productMap = new Map();
+    transferredProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    currentProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    const products = Array.from(productMap.values());
+    
+    // Sắp xếp theo thời gian tạo giảm dần
+    products.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
+    
+    // Đếm số lượng sản phẩm theo giai đoạn - chỉ đếm sản phẩm hiện tại
     const productsByStage = {
-      inTransit: products.filter(p => p.currentStage === 'distribution').length,
-      delivered: products.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
+      inTransit: currentProducts.filter(p => p.currentStage === 'distribution').length,
+      delivered: currentProducts.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
     };
     
     // Lấy chính xác 5 hoạt động gần đây
@@ -120,8 +152,8 @@ exports.getDistributorDashboard = async (req, res, next) => {
       user,
       products,
       productsByStage,
-      productsCount: products.length,
-      activities: activities || [], // Đảm bảo luôn có một mảng
+      productsCount: currentProducts.length,
+      activities: activities || [],
       title: 'Nhà phân phối Dashboard'
     });
   } catch (error) {
@@ -141,13 +173,31 @@ exports.getRetailerDashboard = async (req, res, next) => {
       return res.status(403).redirect('/auth/login');
     }
     
-    // Lấy sản phẩm từ database
-    const products = await Product.getProductsByOwner(userId);
+    // Lấy sản phẩm từ database - kết hợp cả hiện tại và đã chuyển
+    const currentProducts = await Product.getProductsByOwner(userId);
+    const transferredProducts = await Product.getProductsTransferredBy(userId);
     
-    // Đếm số lượng sản phẩm theo giai đoạn
+    // Kết hợp sản phẩm
+    const productMap = new Map();
+    transferredProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    currentProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
+    const products = Array.from(productMap.values());
+    
+    // Sắp xếp theo thời gian tạo giảm dần
+    products.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
+    
+    // Đếm số lượng sản phẩm theo giai đoạn - chỉ đếm sản phẩm hiện tại
     const productsByStage = {
-      inStock: products.filter(p => p.currentStage === 'retail').length,
-      sold: products.filter(p => p.currentStage === 'sold').length
+      inStock: currentProducts.filter(p => p.currentStage === 'retail').length,
+      sold: currentProducts.filter(p => p.currentStage === 'sold').length
     };
     
     // Lấy chính xác 5 hoạt động gần đây
@@ -158,8 +208,8 @@ exports.getRetailerDashboard = async (req, res, next) => {
       user,
       products,
       productsByStage,
-      productsCount: products.length,
-      activities: activities || [], // Đảm bảo luôn có một mảng
+      productsCount: currentProducts.length,
+      activities: activities || [],
       title: 'Nhà bán lẻ Dashboard'
     });
   } catch (error) {
