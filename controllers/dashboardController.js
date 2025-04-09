@@ -73,17 +73,16 @@ exports.getProducerDashboard = async (req, res, next) => {
       }
     }
     
-    // Lấy hoạt động gần đây với số lượng tăng lên
-    // Lấy 15 hoạt động để có dữ liệu dự phòng, nhưng view chỉ hiển thị 5
-    const activities = await Activity.getActivitiesByUser(userId, 15);
-    console.log(`[DASHBOARD] Loaded ${activities.length} activities for dashboard`);
+    // Lấy chính xác 5 hoạt động gần đây
+    const activities = await Activity.getActivitiesByUser(userId, 5);
+    console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for dashboard`);
     
     res.render('dashboard/producer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities: activities || [],
+      activities: activities || [], // Đảm bảo luôn có một mảng, tránh lỗi
       title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {
@@ -113,15 +112,16 @@ exports.getDistributorDashboard = async (req, res, next) => {
       delivered: products.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
     };
     
-    // Lấy hoạt động gần đây của người dùng (15 để dự phòng, view chỉ hiển thị 5)
-    const activities = await Activity.getActivitiesByUser(userId, 15);
+    // Lấy chính xác 5 hoạt động gần đây
+    const activities = await Activity.getActivitiesByUser(userId, 5);
+    console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for distributor dashboard`);
     
     res.render('dashboard/distributor', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities,
+      activities: activities || [], // Đảm bảo luôn có một mảng
       title: 'Nhà phân phối Dashboard'
     });
   } catch (error) {
@@ -150,15 +150,16 @@ exports.getRetailerDashboard = async (req, res, next) => {
       sold: products.filter(p => p.currentStage === 'sold').length
     };
     
-    // Lấy hoạt động gần đây của người dùng (15 để dự phòng, view chỉ hiển thị 5)
-    const activities = await Activity.getActivitiesByUser(userId, 15);
+    // Lấy chính xác 5 hoạt động gần đây
+    const activities = await Activity.getActivitiesByUser(userId, 5);
+    console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for retailer dashboard`);
     
     res.render('dashboard/retailer', { 
       user,
       products,
       productsByStage,
       productsCount: products.length,
-      activities,
+      activities: activities || [], // Đảm bảo luôn có một mảng
       title: 'Nhà bán lẻ Dashboard'
     });
   } catch (error) {

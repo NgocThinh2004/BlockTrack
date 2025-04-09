@@ -74,6 +74,22 @@ class Product {
         description: `Sản phẩm ${product.name} đã được tạo`
       });
       
+      // Thêm hoạt động khi tạo sản phẩm mới
+      try {
+        await Activity.addActivity({
+          userId: productData.ownerId,
+          type: 'product_created',
+          entityId: product.id,
+          entityName: product.name,
+          entityType: 'product',
+          description: `Sản phẩm ${product.name} đã được tạo`
+        });
+        console.log('Đã ghi hoạt động tạo sản phẩm cho:', product.id);
+      } catch (activityError) {
+        console.error('Lỗi khi thêm hoạt động tạo sản phẩm:', activityError);
+        // Không throw error để không ảnh hưởng đến việc tạo sản phẩm
+      }
+      
       return product;
     } catch (error) {
       console.error('Error creating product:', error);

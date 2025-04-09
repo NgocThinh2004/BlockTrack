@@ -194,7 +194,9 @@
       <div class="card shadow-sm h-100">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Hoạt động gần đây</h5>
-          <button class="btn btn-sm btn-outline-secondary">Xem tất cả</button>
+          <div>
+            <button class="btn btn-sm btn-outline-secondary">Xem tất cả</button>
+          </div>
         </div>
         <div class="card-body p-0">
           <div class="activities-container" style="max-height: 400px; overflow-y: auto;">
@@ -229,14 +231,18 @@
                               let timestamp = '';
                               try {
                                 if (activity.timestamp) {
-                                  // Kiểm tra nếu là timestamp từ Firebase
-                                  if (activity.timestamp.toDate) {
-                                    timestamp = activity.timestamp.toDate().toLocaleString('vi-VN');
-                                  } 
-                                  // Kiểm tra nếu là Date hoặc chuỗi ISO
-                                  else if (!isNaN(new Date(activity.timestamp))) {
-                                    timestamp = new Date(activity.timestamp).toLocaleString('vi-VN');
-                                  }
+                                  // Ensure activity.timestamp is a Date object
+                                  const date = activity.timestamp instanceof Date ? 
+                                    activity.timestamp : new Date(activity.timestamp);
+                                    
+                                  // Format the date consistently  
+                                  timestamp = date.toLocaleString('vi-VN', { 
+                                    year: 'numeric', 
+                                    month: '2-digit', 
+                                    day: '2-digit',
+                                    hour: '2-digit', 
+                                    minute: '2-digit'
+                                  });
                                 }
                               %>
                                 <%= timestamp || 'Không có dữ liệu' %>
@@ -261,6 +267,16 @@
     </div>
   </div>
 </div>
+
+<style>
+  .activity-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
 
 <!-- Modal quét mã sản phẩm -->
 <div class="modal fade" id="scanProductModal" tabindex="-1">
@@ -323,8 +339,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-success" id="confirmSale">Xác nhận đã bán</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary" id="confirmSale">Xác nhận</button>
       </div>
     </div>
   </div>

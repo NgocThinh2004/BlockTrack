@@ -47,14 +47,21 @@ class QRCode {
       const Product = require('./productModel'); // Import here to avoid circular dependency
       const product = await Product.getProductById(productId);
       if (product && product.ownerId) {
-        await Activity.addActivity({
-          userId: product.ownerId,
-          type: 'qr_generated',
-          entityId: qrId,
-          entityName: product.name,
-          entityType: 'qr',
-          description: `Mã QR đã được tạo cho ${product.name}`
-        });
+        try {
+          await Activity.addActivity({
+            userId: product.ownerId,
+            type: 'qr_generated',
+            entityId: qrId,
+            entityName: product.name,
+            entityType: 'qr',
+            description: `Mã QR đã được tạo cho ${product.name}`
+          });
+          console.log('Đã thêm activity thành công khi tạo QR code');
+        } catch (activityError) {
+          console.error('Lỗi khi thêm activity cho QR code:', activityError);
+        }
+      } else {
+        console.warn('Không tìm thấy product.ownerId khi tạo QR code:', productId);
       }
       
       return qrCode;

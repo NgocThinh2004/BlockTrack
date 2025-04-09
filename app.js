@@ -73,21 +73,16 @@ try {
   const productRoutes = require('./routes/productRoutes');
   const trackRoutes = require('./routes/trackRoutes');
   const stageRoutes = require('./routes/stageRoutes');
-
+  const qrRoutes = require('./routes/qrRoutes');
+  const activityRoutes = require('./routes/activityRoutes'); // Thêm dòng này
+  
   app.use('/', indexRoutes);
   app.use('/auth', authRoutes);
   app.use('/products', productRoutes);
   app.use('/track', trackRoutes);
   app.use('/stages', stageRoutes);
-  
-  // Thêm route QR vào đây
-  try {
-    const qrRoutes = require('./routes/qrRoutes');
-    app.use('/qr', qrRoutes);
-    console.log('QR routes loaded successfully');
-  } catch (err) {
-    console.error('QR routes not loaded:', err.message);
-  }
+  app.use('/qr', qrRoutes);
+  app.use('/activity', activityRoutes); // Thêm dòng này
   
   // Optionally load other routes if they exist
   try {

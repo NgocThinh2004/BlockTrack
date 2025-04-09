@@ -60,14 +60,20 @@ class ProductStage {
         }
       }
       
-      await Activity.addActivity({
-        userId: stageData.handledBy,
-        type: 'stage_added',
-        entityId: stage.id,
-        entityName: stage.stageName,
-        entityType: 'stage',
-        description: `${product ? product.name : 'Sản phẩm'} chuyển sang giai đoạn ${getStageName(stage.stageName)}`
-      });
+      try {
+        await Activity.addActivity({
+          userId: stageData.handledBy,
+          type: 'stage_added',
+          entityId: stage.id,
+          entityName: stage.stageName,
+          entityType: 'stage',
+          description: `${product ? product.name : 'Sản phẩm'} chuyển sang giai đoạn ${getStageName(stage.stageName)}`
+        });
+        console.log('Đã thêm activity thành công khi tạo stage mới');
+      } catch (activityError) {
+        console.error('Lỗi khi thêm activity cho stage:', activityError);
+        // Không throw error để tránh lỗi stage
+      }
       
       return stage;
     } catch (error) {
