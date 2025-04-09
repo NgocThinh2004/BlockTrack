@@ -9,6 +9,24 @@ const fs = require('fs');
  * - Lưu trữ và quản lý hình ảnh mã QR
  */
 class QRCodeService {
+  constructor() {
+    // Khởi tạo thư mục lưu trữ khi service được tạo
+    this.initQRDirectory();
+  }
+  
+  // Phương thức khởi tạo thư mục QR
+  async initQRDirectory() {
+    try {
+      const qrDir = path.join(__dirname, '../public/qrcodes');
+      if (!fs.existsSync(qrDir)) {
+        fs.mkdirSync(qrDir, { recursive: true });
+      }
+      console.log('QR directory initialized at:', qrDir);
+    } catch (error) {
+      console.error('Error creating QR directory:', error);
+    }
+  }
+
   /**
    * Tạo mã QR từ URL và lưu dưới dạng file
    * @param {String} url - URL cần mã hóa thành QR
@@ -27,6 +45,9 @@ class QRCodeService {
       const filePath = path.join(qrDir, fileName);
       const publicPath = `/qrcodes/${fileName}`;
       
+      console.log('Generating QR code for URL:', url);
+      console.log('QR code will be saved to:', filePath);
+      
       // Tạo QR code
       await QRCode.toFile(filePath, url, {
         errorCorrectionLevel: 'H',
@@ -38,11 +59,12 @@ class QRCodeService {
         }
       });
       
+      console.log('QR code successfully generated');
       return publicPath;
     } catch (error) {
       console.error('QR Code Generation Error:', error);
       // Trong trường hợp lỗi, trả về một ảnh QR mặc định
-      return '/qrcodes/default-qr.png';
+      return '/images/default-qr.png';
     }
   }
 

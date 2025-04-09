@@ -1,11 +1,7 @@
-const firebase = require('firebase/app');
-require('firebase/firestore');
+const firebase = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 const QRCodeService = require('../services/qrCodeService');
 const Activity = require('./activityModel'); // Import Activity model
-
-// Reference to QR codes collection
-const qrCodesCollection = firebase.firestore().collection('qrCodes');
 
 /**
  * QR Code model for managing product QR codes
@@ -18,28 +14,26 @@ class QRCode {
    */
   static async generateQRCode(productId) {
     try {
-      // Check if QR code already exists
-      const existingQR = await this.getQRCodeByProductId(productId);
-      if (existingQR) {
-        return existingQR;
-      }
-      
-      // Create a new QR code ID
+      const qrCodesCollection = firebase.firestore().collection('qrCodes');
       const qrId = uuidv4();
       
-      // Generate the URL for tracking
-      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-      const trackUrl = `${baseUrl}/track/${productId}`;
+      // Tạo URL cho sản phẩm - URL này sẽ được mã hóa thành QR code
+      // Fix: Sử dụng đường dẫn tương đối để tránh vấn đề với domain
+      const productUrl = `/track/${productId}`;
       
-      // Generate QR code image
-      const qrImageUrl = await QRCodeService.generate(trackUrl);
+      console.log('Creating QR code for product:', productId);
+      console.log('Product URL for QR:', productUrl);
       
-      // Create QR code data
+      // Sử dụng QRCodeService để tạo QR code
+      const qrImageUrl = await QRCodeService.generate(productUrl);
+      const qrDataUrl = await QRCodeService.generateDataUrl(productUrl);
+      
       const qrCode = {
         id: qrId,
-        productId,
-        qrImageUrl,
-        trackUrl,
+        productId: productId,
+        qrImageUrl: qrImageUrl,
+        qrDataUrl: qrDataUrl,
+        productUrl: productUrl,
         scans: 0,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -47,6 +41,7 @@ class QRCode {
       
       // Save to database
       await qrCodesCollection.doc(qrId).set(qrCode);
+      console.log('QR code saved to database with ID:', qrId);
       
       // Ghi lại hoạt động nếu có ownerId
       const Product = require('./productModel'); // Import here to avoid circular dependency
@@ -65,7 +60,7 @@ class QRCode {
       return qrCode;
     } catch (error) {
       console.error('Error generating QR code:', error);
-      throw error;
+      throw new Error('Không thể tạo mã QR: ' + error.message);
     }
   }
   
@@ -76,6 +71,7 @@ class QRCode {
    */
   static async getQRCodeByProductId(productId) {
     try {
+      const qrCodesCollection = firebase.firestore().collection('qrCodes');
       const snapshot = await qrCodesCollection
         .where('productId', '==', productId)
         .limit(1)
@@ -102,6 +98,7 @@ class QRCode {
    */
   static async incrementScanCount(qrId) {
     try {
+      const qrCodesCollection = firebase.firestore().collection('qrCodes');
       await qrCodesCollection.doc(qrId).update({
         scans: firebase.firestore.FieldValue.increment(1),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()

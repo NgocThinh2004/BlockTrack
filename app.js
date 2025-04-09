@@ -80,6 +80,15 @@ try {
   app.use('/track', trackRoutes);
   app.use('/stages', stageRoutes);
   
+  // Thêm route QR vào đây
+  try {
+    const qrRoutes = require('./routes/qrRoutes');
+    app.use('/qr', qrRoutes);
+    console.log('QR routes loaded successfully');
+  } catch (err) {
+    console.error('QR routes not loaded:', err.message);
+  }
+  
   // Optionally load other routes if they exist
   try {
     const dashboardRoutes = require('./routes/dashboardRoutes');

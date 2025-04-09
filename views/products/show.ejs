@@ -81,7 +81,15 @@
               </button>
             <% } %>
             <% if (!qrCode) { %>
-              <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2">Tạo mã QR</a>
+              <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2" id="generateQrBtn">
+                <i class="fas fa-qrcode me-1"></i> Tạo mã QR
+              </a>
+              <script>
+                document.getElementById('generateQrBtn').addEventListener('click', function() {
+                  this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
+                  this.classList.add('disabled');
+                });
+              </script>
             <% } %>
             <!-- Thêm nút chuyển quyền sở hữu -->
             <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#transferOwnershipModal">
