@@ -33,7 +33,26 @@
                   </tr>
                   <tr>
                     <td>Ngày tạo QR</td>
-                    <td><%= qrCode && qrCode.createdAt ? new Date(qrCode.createdAt).toLocaleDateString() : 'N/A' %></td>
+                    <td>
+                      <% 
+                        let createdDateStr = 'N/A';
+                        try {
+                          if (qrCode && qrCode.createdAt) {
+                            // Kiểm tra nếu là timestamp từ Firebase
+                            if (qrCode.createdAt.toDate) {
+                              createdDateStr = qrCode.createdAt.toDate().toLocaleString('vi-VN');
+                            } 
+                            // Kiểm tra nếu là Date hoặc chuỗi ISO
+                            else if (!isNaN(new Date(qrCode.createdAt))) {
+                              createdDateStr = new Date(qrCode.createdAt).toLocaleString('vi-VN');
+                            }
+                          }
+                        } catch(e) {
+                          createdDateStr = 'N/A';
+                        }
+                      %>
+                      <%= createdDateStr %>
+                    </td>
                   </tr>
                   <tr>
                     <td>Trạng thái</td>
