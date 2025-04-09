@@ -117,7 +117,13 @@
             <ul class="timeline">
               <% history.forEach((item, index) => { %>
                 <li class="timeline-item mb-5">
-                  <h5 class="fw-bold"><%= item.stageName %></h5>
+                  <h5 class="fw-bold">
+                    <% if (item.stageName === 'qr_generated') { %>
+                      <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+                    <% } else { %>
+                      <%= item.stageName %>
+                    <% } %>
+                  </h5>
                   <p class="text-muted mb-2 fw-bold">
                     <i class="fas fa-calendar-alt me-1"></i>
                     <%= new Date(item.timestamp).toLocaleString() %>
@@ -223,7 +229,7 @@
   </div>
 </div>
 
-<!-- Modal Chuyển quyền sở hữu -->
+<!-- Modal Chuyển quyền sở hữu - Đã tối ưu -->
 <div class="modal fade" id="transferOwnershipModal" tabindex="-1" aria-labelledby="transferOwnershipModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -238,32 +244,106 @@
             Lưu ý: Sau khi chuyển quyền sở hữu, bạn sẽ không còn quyền quản lý sản phẩm này nữa.
           </div>
           
+          <!-- Phương thức chuyển -->
           <div class="mb-3">
-            <label for="recipientType" class="form-label">Chọn người nhận</label>
-            <select class="form-select" id="recipientType" name="recipientType" required>
-              <option value="" selected disabled>-- Chọn loại người nhận --</option>
-              <option value="email">Theo email</option>
-              <option value="wallet">Theo địa chỉ ví</option>
+            <label for="transferType" class="form-label">Phương thức chuyển</label>
+            <select class="form-select" id="transferType" name="transferType">
+              <option value="direct" selected>Chuyển trực tiếp</option>
+              <option value="via_distributor">Chuyển qua đơn vị vận chuyển</option>
             </select>
           </div>
           
-          <div class="mb-3" id="emailInputGroup" style="display:none;">
-            <label for="recipientEmail" class="form-label">Email người nhận</label>
-            <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" placeholder="Nhập email người nhận">
-            <div class="form-text">Nhập email của người dùng đã đăng ký trong hệ thống</div>
+          <!-- Phần chuyển trực tiếp - Đã tối ưu -->
+          <div id="directRecipientSection">
+            <div class="mb-3">
+              <label for="recipientType" class="form-label">Chọn người nhận</label>
+              <select class="form-select" id="recipientType" name="recipientType" required>
+                <option value="email">Tìm theo email</option>
+                <option value="wallet">Tìm theo địa chỉ ví</option>
+              </select>
+            </div>
+            
+            <div id="emailInputGroup" class="mb-3">
+              <label for="recipientEmail" class="form-label">Email người nhận</label>
+              <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" placeholder="Nhập email người nhận">
+            </div>
+            
+            <div id="walletInputGroup" class="mb-3" style="display:none;">
+              <label for="recipientWallet" class="form-label">Địa chỉ ví người nhận</label>
+              <input type="text" class="form-control" id="recipientWallet" name="recipientWallet" placeholder="Nhập địa chỉ ví">
+            </div>
           </div>
           
-          <div class="mb-3" id="walletInputGroup" style="display:none;">
-            <label for="recipientWallet" class="form-label">Địa chỉ ví người nhận</label>
-            <input type="text" class="form-control" id="recipientWallet" name="recipientWallet" placeholder="0x...">
-            <div class="form-text">Nhập địa chỉ ví MetaMask của người nhận</div>
+          <!-- Phần chuyển qua đơn vị vận chuyển -->
+          <div id="viaDistributorSection" style="display: none;">
+            <div class="mb-3">
+              <label for="distributorType" class="form-label">Tìm đơn vị vận chuyển</label>
+              <select class="form-select" id="distributorType" name="distributorType">
+                <option value="email" selected>Tìm theo email</option>
+                <option value="wallet">Tìm theo địa chỉ ví</option>
+              </select>
+            </div>
+            
+            <div id="distributorEmailGroup" class="mb-3">
+              <label for="distributorEmail" class="form-label">Email đơn vị vận chuyển</label>
+              <div class="input-group">
+                <input type="email" class="form-control" id="distributorEmail" name="distributorEmail" placeholder="Nhập email đơn vị vận chuyển">
+                <button class="btn btn-outline-secondary" type="button" id="findDistributorBtn">Tìm</button>
+              </div>
+              <div id="distributorResult" class="mt-2"></div>
+              <input type="hidden" id="distributorId" name="distributorId">
+            </div>
+            
+            <div id="distributorWalletGroup" class="mb-3" style="display:none;">
+              <label for="distributorWallet" class="form-label">Địa chỉ ví đơn vị vận chuyển</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="distributorWallet" name="distributorWallet" placeholder="Nhập địa chỉ ví">
+                <button class="btn btn-outline-secondary" type="button" id="findDistributorByWalletBtn">Tìm</button>
+              </div>
+              <div id="distributorWalletResult" class="mt-2"></div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="finalRecipientType" class="form-label">Tìm người nhận cuối</label>
+              <select class="form-select" id="finalRecipientType" name="finalRecipientType">
+                <option value="email" selected>Tìm theo email</option>
+                <option value="wallet">Tìm theo địa chỉ ví</option>
+              </select>
+            </div>
+            
+            <div id="finalRecipientEmailGroup" class="mb-3">
+              <label for="finalRecipientEmail" class="form-label">Email người nhận cuối</label>
+              <div class="input-group">
+                <input type="email" class="form-control" id="finalRecipientEmail" name="finalRecipientEmail" placeholder="Nhập email người nhận cuối">
+                <button class="btn btn-outline-secondary" type="button" id="findFinalRecipientBtn">Tìm</button>
+              </div>
+              <div id="finalRecipientResult" class="mt-2"></div>
+              <input type="hidden" id="finalRecipientId" name="finalRecipientId">
+            </div>
+            
+            <div id="finalRecipientWalletGroup" class="mb-3" style="display:none;">
+              <label for="finalRecipientWallet" class="form-label">Địa chỉ ví người nhận cuối</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="finalRecipientWallet" name="finalRecipientWallet" placeholder="Nhập địa chỉ ví">
+                <button class="btn btn-outline-secondary" type="button" id="findFinalRecipientByWalletBtn">Tìm</button>
+              </div>
+              <div id="finalRecipientWalletResult" class="mt-2"></div>
+            </div>
+          </div>
+          
+          <!-- Thông tin chung -->
+          <div class="mb-3">
+            <label for="location" class="form-label">Địa chỉ giao hàng</label>
+            <input type="text" class="form-control" id="location" name="location" placeholder="Nhập địa chỉ giao hàng">
+            <small class="form-text text-muted">Địa điểm nhận hàng của người nhận</small>
           </div>
           
           <div class="mb-3">
-            <label for="transferReason" class="form-label">Lý do chuyển</label>
+            <label for="transferReason" class="form-label">Lý do chuyển quyền sở hữu</label>
             <select class="form-select" id="transferReason" name="transferReason" required>
-              <option value="" selected disabled>-- Chọn lý do --</option>
-              <option value="to_distributor">Chuyển cho nhà phân phối</option>
+              <option value="" selected disabled>Chọn lý do</option>
+              <option value="sale">Bán sản phẩm</option>
+              <option value="to_distributor">Chuyển cho đơn vị phân phối</option>
               <option value="to_retailer">Chuyển cho nhà bán lẻ</option>
               <option value="other">Lý do khác</option>
             </select>
@@ -331,6 +411,175 @@
         console.log('Transfer form submitting...');
       });
     }
+    
+    // Xử lý hiển thị form theo phương thức chuyển
+    const transferTypeSelect = document.getElementById('transferType');
+    const directRecipientSection = document.getElementById('directRecipientSection');
+    const viaDistributorSection = document.getElementById('viaDistributorSection');
+    
+    transferTypeSelect.addEventListener('change', function() {
+      if (this.value === 'direct') {
+        directRecipientSection.style.display = 'block';
+        viaDistributorSection.style.display = 'none';
+        document.getElementById('distributorId').removeAttribute('required');
+        document.getElementById('finalRecipientId').removeAttribute('required');
+      } else {
+        directRecipientSection.style.display = 'none';
+        viaDistributorSection.style.display = 'block';
+        document.getElementById('distributorId').setAttribute('required', 'required');
+        document.getElementById('finalRecipientId').setAttribute('required', 'required');
+      }
+    });
+    
+    // Function to find distributor
+    document.getElementById('findDistributorBtn').addEventListener('click', async function() {
+      const email = document.getElementById('distributorEmail').value;
+      if (!email) return;
+      
+      try {
+        const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=distributor`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          document.getElementById('distributorResult').innerHTML = 
+            `<div class="alert alert-success">Đã tìm thấy: ${data.user.name} (${data.user.role})</div>`;
+          document.getElementById('distributorId').value = data.user.id;
+        } else {
+          document.getElementById('distributorResult').innerHTML = 
+            `<div class="alert alert-danger">Không tìm thấy đơn vị vận chuyển với email này</div>`;
+          document.getElementById('distributorId').value = '';
+        }
+      } catch (error) {
+        document.getElementById('distributorResult').innerHTML = 
+          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+      }
+    });
+    
+    // Function to find final recipient
+    document.getElementById('findFinalRecipientBtn').addEventListener('click', async function() {
+      const email = document.getElementById('finalRecipientEmail').value;
+      if (!email) return;
+      
+      try {
+        const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=retailer`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          document.getElementById('finalRecipientResult').innerHTML = 
+            `<div class="alert alert-success">Đã tìm thấy: ${data.user.name} (${data.user.role})</div>`;
+          document.getElementById('finalRecipientId').value = data.user.id;
+        } else {
+          document.getElementById('finalRecipientResult').innerHTML = 
+            `<div class="alert alert-danger">Không tìm thấy người nhận với email này</div>`;
+          document.getElementById('finalRecipientId').value = '';
+        }
+      } catch (error) {
+        document.getElementById('finalRecipientResult').innerHTML = 
+          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+      }
+    });
+    
+    // Xử lý tìm đơn vị vận chuyển theo email
+    const distributorTypeSelect = document.getElementById('distributorType');
+    const distributorEmailGroup = document.getElementById('distributorEmailGroup');
+    const distributorWalletGroup = document.getElementById('distributorWalletGroup');
+    
+    distributorTypeSelect.addEventListener('change', function() {
+      if (this.value === 'email') {
+        distributorEmailGroup.style.display = 'block';
+        distributorWalletGroup.style.display = 'none';
+      } else {
+        distributorEmailGroup.style.display = 'none';
+        distributorWalletGroup.style.display = 'block';
+      }
+    });
+    
+    // Xử lý tìm người nhận cuối theo email/ví
+    const finalRecipientTypeSelect = document.getElementById('finalRecipientType');
+    const finalRecipientEmailGroup = document.getElementById('finalRecipientEmailGroup');
+    const finalRecipientWalletGroup = document.getElementById('finalRecipientWalletGroup');
+    
+    finalRecipientTypeSelect.addEventListener('change', function() {
+      if (this.value === 'email') {
+        finalRecipientEmailGroup.style.display = 'block';
+        finalRecipientWalletGroup.style.display = 'none';
+      } else {
+        finalRecipientEmailGroup.style.display = 'none';
+        finalRecipientWalletGroup.style.display = 'block';
+      }
+    });
+    
+    // Tìm đơn vị vận chuyển theo email
+    document.getElementById('findDistributorBtn').addEventListener('click', async function() {
+      const email = document.getElementById('distributorEmail').value;
+      if (!email) return;
+      
+      try {
+        const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=distributor`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          document.getElementById('distributorResult').innerHTML = 
+            `<div class="alert alert-success">Đã tìm thấy: ${data.user.name} (Đơn vị vận chuyển)</div>`;
+          document.getElementById('distributorId').value = data.user.id;
+        } else {
+          document.getElementById('distributorResult').innerHTML = 
+            `<div class="alert alert-danger">Không tìm thấy đơn vị vận chuyển với email này</div>`;
+          document.getElementById('distributorId').value = '';
+        }
+      } catch (error) {
+        document.getElementById('distributorResult').innerHTML = 
+          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+      }
+    });
+    
+    // Tìm đơn vị vận chuyển theo ví
+    document.getElementById('findDistributorByWalletBtn').addEventListener('click', async function() {
+      const wallet = document.getElementById('distributorWallet').value;
+      if (!wallet) return;
+      
+      try {
+        const response = await fetch(`/api/users/find-by-wallet?wallet=${encodeURIComponent(wallet)}&role=distributor`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          document.getElementById('distributorWalletResult').innerHTML = 
+            `<div class="alert alert-success">Đã tìm thấy: ${data.user.name} (Đơn vị vận chuyển)</div>`;
+          document.getElementById('distributorId').value = data.user.id;
+        } else {
+          document.getElementById('distributorWalletResult').innerHTML = 
+            `<div class="alert alert-danger">Không tìm thấy đơn vị vận chuyển với địa chỉ ví này</div>`;
+          document.getElementById('distributorId').value = '';
+        }
+      } catch (error) {
+        document.getElementById('distributorWalletResult').innerHTML = 
+          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+      }
+    });
+    
+    // Tương tự cho người nhận cuối
+    document.getElementById('findFinalRecipientByWalletBtn').addEventListener('click', async function() {
+      const wallet = document.getElementById('finalRecipientWallet').value;
+      if (!wallet) return;
+      
+      try {
+        const response = await fetch(`/api/users/find-by-wallet?wallet=${encodeURIComponent(wallet)}&role=retailer`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          document.getElementById('finalRecipientWalletResult').innerHTML = 
+            `<div class="alert alert-success">Đã tìm thấy: ${data.user.name} (Người nhận cuối)</div>`;
+          document.getElementById('finalRecipientId').value = data.user.id;
+        } else {
+          document.getElementById('finalRecipientWalletResult').innerHTML = 
+            `<div class="alert alert-danger">Không tìm thấy người nhận cuối với địa chỉ ví này</div>`;
+          document.getElementById('finalRecipientId').value = '';
+        }
+      } catch (error) {
+        document.getElementById('finalRecipientWalletResult').innerHTML = 
+          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+      }
+    });
   });
 </script>
 

@@ -329,55 +329,208 @@ exports.transferOwnership = async (req, res, next) => {
       });
     }
     
-    // Lấy thông tin người nhận
-    const { recipientType, recipientEmail, recipientWallet, transferReason, otherReason } = req.body;
-    console.log('Transfer ownership request:', { recipientType, recipientEmail, recipientWallet, transferReason });
+    // Lấy thông tin từ form
+    const { 
+      transferType, recipientType, recipientEmail, recipientWallet, 
+      distributorType, distributorEmail, distributorWallet, distributorId,
+      finalRecipientType, finalRecipientEmail, finalRecipientWallet, finalRecipientId,
+      transferReason, otherReason, location
+    } = req.body;
     
-    let newOwnerId = null;
-    let user = null;
+    console.log('Transfer request:', req.body);
     
-    // Tìm người nhận theo email hoặc địa chỉ ví
-    if (recipientType === 'email' && recipientEmail) {
-      user = await User.getUserByEmail(recipientEmail);
-      if (!user) {
-        return res.status(404).render('products/show', { 
-          product, 
-          error: 'Không tìm thấy người dùng với email này',
-          qrCode: await QRCode.getQRCodeByProductId(productId)
-        });
+    if (transferType === 'direct') {
+      // Chuyển trực tiếp - quy trình hiện tại
+      let newOwnerId = null;
+      let user = null;
+      
+      // Tìm người nhận theo email hoặc địa chỉ ví
+      if (recipientType === 'email' && recipientEmail) {
+        user = await User.getUserByEmail(recipientEmail);
+        if (!user) {
+          return res.status(404).render('products/show', { 
+            product, 
+            error: 'Không tìm thấy người dùng với email này',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        newOwnerId = user.id;
+      } else if (recipientType === 'wallet' && recipientWallet) {
+        user = await User.getUserByWalletAddress(recipientWallet);
+        if (!user) {
+          return res.status(404).render('products/show', { 
+            product, 
+            error: 'Không tìm thấy người dùng với địa chỉ ví này',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        newOwnerId = user.id;
       }
-      newOwnerId = user.id;
-    } else if (recipientType === 'wallet' && recipientWallet) {
-      user = await User.getUserByWalletAddress(recipientWallet);
-      if (!user) {
-        return res.status(404).render('products/show', { 
-          product, 
-          error: 'Không tìm thấy người dùng với địa chỉ ví này',
-          qrCode: await QRCode.getQRCodeByProductId(productId)
-        });
+      
+      // Xác định lý do chuyển quyền sở hữu và địa chỉ
+      const reason = transferReason === 'other' ? otherReason : transferReason;
+      
+      // Thực hiện chuyển quyền sở hữu - sử dụng địa chỉ giao hàng
+      await Product.transferOwnership(
+        productId, 
+        newOwnerId, 
+        reason, 
+        { location: location || 'N/A' }
+      );
+      
+      return res.redirect(`/products?success=Đã chuyển quyền sở hữu sản phẩm cho ${user.name}`);
+    } 
+    else if (transferType === 'via_distributor') {
+      // Chuyển qua trung gian
+      let distributorUserId = distributorId;
+      let distributor = null;
+      
+      // Tìm đơn vị vận chuyển theo email hoặc ví
+      if (!distributorUserId) {
+        if (distributorType === 'email' && distributorEmail) {
+          distributor = await User.getUserByEmail(distributorEmail);
+        } else if (distributorType === 'wallet' && distributorWallet) {
+          distributor = await User.getUserByWalletAddress(distributorWallet);
+        }
+        
+        if (!distributor) {
+          return res.status(404).render('products/show', { 
+            product, 
+            error: 'Không tìm thấy đơn vị vận chuyển',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        
+        if (distributor.role !== 'distributor') {
+          return res.status(400).render('products/show', { 
+            product, 
+            error: 'Người dùng không phải là đơn vị vận chuyển',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        
+        distributorUserId = distributor.id;
+      } else {
+        // Kiểm tra đơn vị vận chuyển từ ID
+        distributor = await User.getUserById(distributorUserId);
+        if (!distributor || distributor.role !== 'distributor') {
+          return res.status(400).render('products/show', { 
+            product, 
+            error: 'Đơn vị vận chuyển không hợp lệ',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
       }
-      newOwnerId = user.id;
-    } else {
-      return res.status(400).render('products/show', { 
-        product, 
-        error: 'Vui lòng cung cấp thông tin người nhận',
-        qrCode: await QRCode.getQRCodeByProductId(productId)
-      });
+      
+      // Tìm người nhận cuối
+      let finalRecipientUserId = finalRecipientId;
+      let finalRecipient = null;
+      
+      if (!finalRecipientUserId) {
+        if (finalRecipientType === 'email' && finalRecipientEmail) {
+          finalRecipient = await User.getUserByEmail(finalRecipientEmail);
+        } else if (finalRecipientType === 'wallet' && finalRecipientWallet) {
+          finalRecipient = await User.getUserByWalletAddress(finalRecipientWallet);
+        }
+        
+        if (!finalRecipient) {
+          return res.status(404).render('products/show', { 
+            product, 
+            error: 'Không tìm thấy người nhận cuối',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        
+        if (finalRecipient.role !== 'retailer') {
+          return res.status(400).render('products/show', { 
+            product, 
+            error: 'Người nhận cuối phải là nhà bán lẻ',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+        
+        finalRecipientUserId = finalRecipient.id;
+      } else {
+        finalRecipient = await User.getUserById(finalRecipientUserId);
+        if (!finalRecipient || finalRecipient.role !== 'retailer') {
+          return res.status(400).render('products/show', { 
+            product, 
+            error: 'Người nhận cuối không hợp lệ',
+            qrCode: await QRCode.getQRCodeByProductId(productId)
+          });
+        }
+      }
+      
+      // Xác định lý do chuyển quyền sở hữu
+      const reason = transferReason === 'other' ? otherReason : transferReason;
+      
+      // Thực hiện chuyển quyền sở hữu tới đơn vị vận chuyển, kèm thông tin người nhận cuối
+      await Product.transferWithShipping(
+        productId,
+        distributorUserId,
+        finalRecipientUserId,
+        reason,
+        { 
+          location: location || 'N/A',
+          distributorName: distributor.name,
+          finalRecipientName: finalRecipient.name
+        }
+      );
+      
+      return res.redirect(`/products?success=Đã chuyển sản phẩm qua đơn vị vận chuyển ${distributor.name}`);
     }
     
-    // Xác định lý do chuyển quyền sở hữu
-    const reason = transferReason === 'other' ? otherReason : transferReason;
+    return res.status(400).render('products/show', { 
+      product, 
+      error: 'Phương thức chuyển không hợp lệ',
+      qrCode: await QRCode.getQRCodeByProductId(productId)
+    });
     
-    // Thực hiện chuyển quyền sở hữu, truyền thêm lý do
-    await Product.transferOwnership(productId, newOwnerId, reason);
-    
-    // Xóa phần ghi hoạt động ở đây vì đã được xử lý trong model Product.transferOwnership
-    // Việc ghi hoạt động này gây ra hiện tượng ghi 2 lần
-    
-    // Chuyển hướng đến trang sản phẩm với thông báo thành công
-    return res.redirect(`/products?success=Đã chuyển quyền sở hữu sản phẩm cho ${user.name}`);
   } catch (error) {
     console.error('Error transferring product ownership:', error);
     next(error);
+  }
+};
+
+/**
+ * Xử lý hoàn tất giao hàng từ nhà phân phối đến người nhận cuối
+ */
+exports.completeDelivery = async (req, res, next) => {
+  try {
+    const { productId, recipientId, location, notes } = req.body;
+    const userId = req.session.userId;
+    
+    // Kiểm tra quyền sở hữu
+    const product = await Product.getProductById(productId);
+    if (!product) {
+      req.flash('error', 'Không tìm thấy sản phẩm');
+      return res.redirect('/dashboard');
+    }
+    
+    // Kiểm tra quyền (phải là nhà phân phối đang sở hữu sản phẩm)
+    if (product.ownerId !== userId) {
+      req.flash('error', 'Bạn không có quyền thực hiện thao tác này');
+      return res.redirect('/dashboard');
+    }
+    
+    // Kiểm tra người nhận cuối
+    if (!product.finalRecipientId || product.finalRecipientId !== recipientId) {
+      req.flash('error', 'Thông tin người nhận không hợp lệ');
+      return res.redirect('/dashboard');
+    }
+    
+    // Chuyển quyền sở hữu cho người nhận cuối
+    await Product.completeDelivery(productId, recipientId, { 
+      location: location || 'N/A',
+      notes: notes || '',
+      deliveredBy: userId
+    });
+    
+    req.flash('success', 'Đã hoàn tất giao hàng thành công');
+    return res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Error completing delivery:', error);
+    req.flash('error', 'Có lỗi xảy ra khi hoàn tất giao hàng');
+    return res.redirect('/dashboard');
   }
 };

@@ -75,6 +75,7 @@ try {
   const stageRoutes = require('./routes/stageRoutes');
   const qrRoutes = require('./routes/qrRoutes');
   const activityRoutes = require('./routes/activityRoutes'); // Thêm dòng này
+  const apiRoutes = require('./routes/apiRoutes');
   
   app.use('/', indexRoutes);
   app.use('/auth', authRoutes);
@@ -83,6 +84,7 @@ try {
   app.use('/stages', stageRoutes);
   app.use('/qr', qrRoutes);
   app.use('/activity', activityRoutes); // Thêm dòng này
+  app.use('/api', apiRoutes);
   
   // Optionally load other routes if they exist
   try {

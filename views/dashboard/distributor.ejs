@@ -146,6 +146,61 @@
     </div>
   </div>
   
+  <!-- Thêm phần hiển thị sản phẩm cần giao cho người nhận cuối -->
+  <div class="card mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Sản phẩm cần giao</h5>
+      <span class="badge bg-warning text-dark"><%= products.filter(p => p.finalRecipientId).length %></span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Sản phẩm</th>
+              <th>Người nhận</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% const productsToDeliver = products.filter(p => p.finalRecipientId); %>
+            <% if (productsToDeliver.length > 0) { %>
+              <% productsToDeliver.forEach(product => { %>
+                <tr>
+                  <td>
+                    <a href="/products/<%= product.id %>" class="text-decoration-none">
+                      <%= product.name %>
+                    </a>
+                  </td>
+                  <td>
+                    <span class="badge bg-success" data-recipient-id="<%= product.finalRecipientId %>">
+                      <i class="fas fa-user me-1"></i> Nhà bán lẻ
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-warning text-dark">Đang vận chuyển</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-primary complete-delivery-btn" 
+                            data-product-id="<%= product.id %>"
+                            data-recipient-id="<%= product.finalRecipientId %>">
+                      <i class="fas fa-truck me-1"></i> Hoàn tất giao hàng
+                    </button>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="4" class="text-center py-3">Không có sản phẩm cần giao</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- Distribution Analytics -->
   <div class="row">
     <div class="col-md-7 mb-4">
@@ -309,6 +364,38 @@
   </div>
 </div>
 
+<!-- Thêm modal xác nhận giao hàng -->
+<div class="modal fade" id="completeDeliveryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Xác nhận hoàn tất giao hàng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="completeDeliveryForm" action="/products/complete-delivery" method="POST">
+        <div class="modal-body">
+          <input type="hidden" id="deliveryProductId" name="productId">
+          <input type="hidden" id="deliveryRecipientId" name="recipientId">
+          
+          <div class="mb-3">
+            <label for="deliveryLocation" class="form-label">Địa điểm giao hàng</label>
+            <input type="text" class="form-control" id="deliveryLocation" name="location" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="deliveryNotes" class="form-label">Ghi chú giao hàng</label>
+            <textarea class="form-control" id="deliveryNotes" name="notes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Xác nhận giao hàng</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -357,5 +444,22 @@
         }
       }
     );
+
+    // Khởi tạo modal xác nhận giao hàng
+    const completeDeliveryModal = document.getElementById('completeDeliveryModal');
+    const completeDeliveryBtns = document.querySelectorAll('.complete-delivery-btn');
+    
+    completeDeliveryBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const productId = this.getAttribute('data-product-id');
+        const recipientId = this.getAttribute('data-recipient-id');
+        
+        document.getElementById('deliveryProductId').value = productId;
+        document.getElementById('deliveryRecipientId').value = recipientId;
+        
+        const modal = new bootstrap.Modal(completeDeliveryModal);
+        modal.show();
+      });
+    });
   });
 </script>

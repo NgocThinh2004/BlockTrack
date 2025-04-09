@@ -28,4 +28,7 @@ router.post('/:id/retry-blockchain', isAuthenticated, loadUser, productControlle
 // Chuyển quyền sở hữu sản phẩm
 router.post('/:id/transfer', isAuthenticated, productController.transferOwnership);
 
+// Route hoàn tất giao hàng
+router.post('/complete-delivery', isAuthenticated, productController.completeDelivery);
+
 module.exports = router;

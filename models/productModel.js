@@ -223,9 +223,10 @@ class Product {
    * @param {string} productId - Product ID
    * @param {string} newOwnerId - ID of the new owner
    * @param {string} transferReason - Lý do chuyển quyền sở hữu
+   * @param {string} receiverLocation - Địa chỉ người nhận
    * @returns {boolean} - Success status
    */
-  static async transferOwnership(productId, newOwnerId, transferReason = '') {
+  static async transferOwnership(productId, newOwnerId, transferReason = '', receiverLocation = '') {
     try {
       const product = await this.getProductById(productId);
       
@@ -237,15 +238,19 @@ class Product {
       const previousOwnerId = product.ownerId;
       
       // Tìm thông tin người nhận nếu có
-      let receiverData = {};
-      let newStage = '';
+      let receiverData = {
+        receiverLocation: receiverLocation
+      };
+      
       try {
         const User = require('./userModel');
         const receiver = await User.getUserById(newOwnerId);
         if (receiver) {
           receiverData = {
+            ...receiverData,
             receiverName: receiver.name,
-            receiverRole: receiver.role
+            receiverRole: receiver.role,
+            receiverAddress: receiverLocation || receiver.address || 'N/A'
           };
           
           // Cập nhật trạng thái dựa trên vai trò người nhận
@@ -528,6 +533,224 @@ class Product {
     } catch (error) {
       console.error('Error getting transferred products:', error);
       return [];
+    }
+  }
+
+  /**
+   * Chuyển quyền sở hữu qua đơn vị vận chuyển và đến người nhận cuối
+   * @param {string} productId - ID sản phẩm
+   * @param {string} distributorId - ID đơn vị vận chuyển
+   * @param {string} finalRecipientId - ID người nhận cuối (nhà bán lẻ)
+   * @param {string} transferReason - Lý do chuyển
+   * @param {Object} additionalData - Dữ liệu bổ sung
+   * @returns {boolean} - Success status
+   */
+  static async transferWithShipping(productId, distributorId, finalRecipientId, transferReason = '', additionalData = {}) {
+    try {
+      const product = await this.getProductById(productId);
+      
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      
+      // Lưu thông tin chủ sở hữu cũ
+      const previousOwnerId = product.ownerId;
+      
+      // Chuẩn bị dữ liệu nhà phân phối
+      let receiverData = {
+        receiverName: additionalData.distributorName || 'Đơn vị vận chuyển',
+        receiverRole: 'distributor',
+        receiverLocation: additionalData.location || 'N/A',
+        finalRecipientId: finalRecipientId,
+        finalRecipientName: additionalData.finalRecipientName || 'Nhà bán lẻ'
+      };
+      
+      // Record the transfer on blockchain
+      let blockchainResult = null;
+      try {
+        blockchainResult = await blockchainService.transferProduct(
+          product.blockchainId, 
+          distributorId
+        );
+        
+        console.log('Ownership transferred on blockchain:', blockchainResult);
+      } catch (blockchainError) {
+        console.error('Error transferring product on blockchain:', blockchainError);
+      }
+      
+      // Update in database
+      const updateData = {
+        ownerId: distributorId,
+        currentStage: 'distribution',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        finalRecipientId: finalRecipientId // Lưu thông tin người nhận cuối
+      };
+      
+      // Add blockchain transaction hash if available
+      if (blockchainResult && blockchainResult.transactionHash) {
+        updateData.blockchainTxId = blockchainResult.transactionHash;
+      }
+      
+      await productsCollection.doc(productId).update(updateData);
+      
+      // Thêm giai đoạn chuyển quyền sở hữu vào lịch sử sản phẩm
+      try {
+        const ProductStage = require('./stageModel');
+        await ProductStage.addTransferStage(
+          productId, 
+          previousOwnerId, 
+          distributorId, 
+          transferReason, 
+          receiverData, 
+          'distribution'
+        );
+      } catch (stageError) {
+        console.error('Error adding transfer stage:', stageError);
+      }
+      
+      // Ghi nhật ký hoạt động cho người chuyển
+      await Activity.addActivity({
+        userId: previousOwnerId,
+        type: 'ownership_transferred',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã chuyển sản phẩm "${product.name}" qua đơn vị vận chuyển ${receiverData.receiverName}`
+      });
+      
+      // Ghi nhật ký hoạt động cho người nhận
+      await Activity.addActivity({
+        userId: distributorId,
+        type: 'ownership_received',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã nhận sản phẩm "${product.name}" để vận chuyển đến ${receiverData.finalRecipientName}`
+      });
+      
+      // Thông báo cho người nhận cuối (nếu có)
+      if (finalRecipientId) {
+        await Activity.addActivity({
+          userId: finalRecipientId,
+          type: 'product_shipping',
+          entityId: productId,
+          entityName: product.name,
+          entityType: 'product',
+          description: `Sản phẩm "${product.name}" đang được vận chuyển đến bạn`
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error transferring with shipping:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hoàn tất giao hàng đến người nhận cuối
+   * @param {string} productId - ID sản phẩm
+   * @param {string} finalRecipientId - ID người nhận cuối
+   * @param {Object} deliveryData - Dữ liệu giao hàng
+   * @returns {boolean} - Success status
+   */
+  static async completeDelivery(productId, finalRecipientId, deliveryData = {}) {
+    try {
+      const product = await this.getProductById(productId);
+      
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      
+      // Lưu thông tin chủ sở hữu cũ (nhà phân phối)
+      const previousOwnerId = product.ownerId;
+      
+      // Chuẩn bị dữ liệu người nhận cuối
+      let receiverData = {
+        receiverName: 'Nhà bán lẻ',
+        receiverRole: 'retailer',
+        receiverLocation: deliveryData.location || 'N/A',
+        deliveryNotes: deliveryData.notes || ''
+      };
+      
+      // Lấy thông tin người nhận
+      try {
+        const User = require('./userModel');
+        const receiver = await User.getUserById(finalRecipientId);
+        if (receiver) {
+          receiverData.receiverName = receiver.name;
+        }
+      } catch (e) {
+        console.warn('Could not get final recipient information:', e);
+      }
+      
+      // Record the transfer on blockchain
+      let blockchainResult = null;
+      try {
+        blockchainResult = await blockchainService.transferProduct(
+          product.blockchainId, 
+          finalRecipientId
+        );
+        
+        console.log('Final delivery completed on blockchain:', blockchainResult);
+      } catch (blockchainError) {
+        console.error('Error transferring product on blockchain:', blockchainError);
+      }
+      
+      // Update in database
+      const updateData = {
+        ownerId: finalRecipientId,
+        currentStage: 'retail', // Giai đoạn bán lẻ
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        finalRecipientId: null // Xóa trường này vì đã chuyển xong
+      };
+      
+      // Add blockchain transaction hash if available
+      if (blockchainResult && blockchainResult.transactionHash) {
+        updateData.blockchainTxId = blockchainResult.transactionHash;
+      }
+      
+      await productsCollection.doc(productId).update(updateData);
+      
+      // Thêm giai đoạn chuyển quyền sở hữu vào lịch sử sản phẩm
+      try {
+        const ProductStage = require('./stageModel');
+        await ProductStage.addTransferStage(
+          productId, 
+          previousOwnerId, 
+          finalRecipientId, 
+          'Hoàn tất giao hàng', 
+          receiverData, 
+          'retail'
+        );
+      } catch (stageError) {
+        console.error('Error adding delivery stage:', stageError);
+      }
+      
+      // Ghi nhật ký hoạt động cho nhà phân phối
+      await Activity.addActivity({
+        userId: previousOwnerId,
+        type: 'delivery_completed',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã giao sản phẩm "${product.name}" cho ${receiverData.receiverName}`
+      });
+      
+      // Ghi nhật ký hoạt động cho người nhận cuối
+      await Activity.addActivity({
+        userId: finalRecipientId,
+        type: 'product_received',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã nhận sản phẩm "${product.name}" từ đơn vị vận chuyển`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error completing delivery:', error);
+      throw error;
     }
   }
 }

@@ -138,35 +138,42 @@
                   stage.stageName === 'packaging' ? 'bg-info' : 
                   stage.stageName === 'distribution' ? 'bg-warning' : 
                   stage.stageName === 'retail' ? 'bg-success' : 
+                  stage.stageName === 'qr_generated' ? 'bg-info' :
                   'bg-secondary' 
                 %>"></div>
                 <div class="timeline-content">
-                  <h6 class="<%= index === 0 ? 'text-primary fw-bold' : '' %>">
-                    <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
-                  </h6>
-                  <p><%= stage.description %></p>
-                  <div class="timeline-meta">
-                    <span><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></span>
-                    <span><i class="fas fa-calendar-alt me-1"></i> 
-                      <% 
-                        let stageTime = '';
-                        try {
-                          if (stage.timestamp) {
-                            // Kiểm tra nếu là timestamp từ Firebase
-                            if (stage.timestamp.toDate) {
-                              stageTime = stage.timestamp.toDate().toLocaleString('vi-VN');
-                            } 
-                            // Kiểm tra nếu là Date hoặc chuỗi ISO
-                            else if (!isNaN(new Date(stage.timestamp))) {
-                              stageTime = new Date(stage.timestamp).toLocaleString('vi-VN');
-                            }
-                          }
-                        %>
-                        <%= stageTime || 'Không có dữ liệu' %>
-                      <% } catch(e) { %>
-                        Không có dữ liệu
+                  <div class="d-flex justify-content-between mb-1">
+                    <h6 class="<%= index === 0 ? 'text-primary fw-bold' : '' %>">
+                      <% if (stage.stageName === 'qr_generated') { %>
+                        <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+                      <% } else { %>
+                        <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
                       <% } %>
-                    </span>
+                    </h6>
+                    <p><%= stage.description %></p>
+                    <div class="timeline-meta">
+                      <span><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></span>
+                      <span><i class="fas fa-calendar-alt me-1"></i> 
+                        <% 
+                          let stageTime = '';
+                          try {
+                            if (stage.timestamp) {
+                              // Kiểm tra nếu là timestamp từ Firebase
+                              if (stage.timestamp.toDate) {
+                                stageTime = stage.timestamp.toDate().toLocaleString('vi-VN');
+                              } 
+                              // Kiểm tra nếu là Date hoặc chuỗi ISO
+                              else if (!isNaN(new Date(stage.timestamp))) {
+                                stageTime = new Date(stage.timestamp).toLocaleString('vi-VN');
+                              }
+                            }
+                          %>
+                          <%= stageTime || 'Không có dữ liệu' %>
+                        <% } catch(e) { %>
+                          Không có dữ liệu
+                        <% } %>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

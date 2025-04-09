@@ -57,8 +57,22 @@ class QRCode {
             description: `Mã QR đã được tạo cho ${product.name}`
           });
           console.log('Đã thêm activity thành công khi tạo QR code');
+          
+          // Thêm mới: Tạo một giai đoạn trong lịch sử sản phẩm khi tạo QR
+          const ProductStage = require('./stageModel');
+          const stageData = {
+            productId: productId,
+            stageName: 'qr_generated',
+            description: 'Mã QR đã được tạo cho sản phẩm này',
+            location: 'Hệ thống',
+            handledBy: product.ownerId
+          };
+          
+          // Thêm giai đoạn vào lịch sử sản phẩm và đưa lên blockchain
+          await ProductStage.addStage(stageData);
+          console.log('Đã thêm giai đoạn tạo QR vào lịch sử sản phẩm và blockchain');
         } catch (activityError) {
-          console.error('Lỗi khi thêm activity cho QR code:', activityError);
+          console.error('Lỗi khi thêm activity hoặc stage cho QR code:', activityError);
         }
       } else {
         console.warn('Không tìm thấy product.ownerId khi tạo QR code:', productId);

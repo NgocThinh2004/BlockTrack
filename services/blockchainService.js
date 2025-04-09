@@ -159,10 +159,13 @@ class BlockchainService {
       // Lấy sản phẩm từ blockchain
       const product = await this.getProductById(stage.productId);
       
+      // Xử lý đặc biệt cho giai đoạn tạo QR
+      const stageName = stage.stageName === 'qr_generated' ? 'QR Code Created' : stage.stageName;
+      
       const result = await contract.methods
         .addProductStage(
           product.blockchainId,
-          stage.stageName,
+          stageName,
           stage.description,
           stage.location,
           Math.floor(Date.now() / 1000), // Thời gian hiện tại

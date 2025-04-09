@@ -118,13 +118,21 @@ class ProductStage {
         actualStageName = 'retail';
       }
       
+      // Xác định địa chỉ dựa vào thông tin người nhận
+      let location = 'N/A';
+      if (newStage === 'distribution' && receiverData.receiverAddress) {
+        location = receiverData.receiverAddress;
+      } else if (receiverData.receiverLocation) {
+        location = receiverData.receiverLocation;
+      }
+      
       // Prepare stage data 
       const stage = {
         id: stageId,
         productId: productId,
         stageName: actualStageName,
         description: description,
-        location: 'N/A', // Vị trí không áp dụng cho chuyển quyền sở hữu
+        location: location,
         previousOwnerId: previousOwnerId,
         newOwnerId: newOwnerId,
         handledBy: previousOwnerId, // Người thực hiện là chủ sở hữu cũ
