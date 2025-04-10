@@ -1,6 +1,7 @@
 const Product = require('../models/productModel');
 const QRCode = require('../models/qrCodeModel');
 const ProductStage = require('../models/stageModel');
+const { getProductChanges } = require('../utils/productDiff');
 
 /**
  * Controller cho trang truy xuất
@@ -45,10 +46,27 @@ exports.trackProduct = async (req, res, next) => {
     // Lấy QR code nếu có
     const qrCode = await QRCode.getQRCodeByProductId(productId);
     
+    // Lấy chi tiết thay đổi sản phẩm
+    // Sửa: Đảm bảo hàm getProductChanges được gọi đúng cách và thêm log để debug
+    console.log('Trạng thái xác thực sản phẩm:', {
+      id: product.id,
+      verified: product.verified,
+      hasOriginalHash: !!product.originalHash,
+      hasCurrentHash: !!product.currentHash
+    });
+    
+    let productChanges = null;
+    if (product.verified === false) {
+      // Đảm bảo xử lý hàm async đúng cách
+      productChanges = await getProductChanges(product);
+      console.log('Chi tiết thay đổi sản phẩm:', { hasChanges: !!productChanges, changesCount: productChanges ? productChanges.length : 0 });
+    }
+    
     res.render('track/product', {
       product,
       history: history || [],
       qrCode,
+      productChanges,
       title: `Truy xuất: ${product.name}`
     });
   } catch (error) {

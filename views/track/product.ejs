@@ -120,6 +120,101 @@
         </div>
       </div>
 
+      <!-- Phần hiển thị thông tin xác thực blockchain -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Thông tin xác thực blockchain</h5>
+        </div>
+        <div class="card-body">
+          <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
+            <% if (product.verified === false) { %>
+              <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Cảnh báo:</strong> Dữ liệu sản phẩm đã thay đổi so với bản gốc trên blockchain
+              </div>
+              
+              <% if (productChanges && productChanges.length > 0) { %>
+                <div class="mt-3">
+                  <h6>Chi tiết thông tin đã thay đổi:</h6>
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Trường thông tin</th>
+                          <th>Giá trị khi tạo</th>
+                          <th>Giá trị hiện tại</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% productChanges.forEach(change => { %>
+                          <tr>
+                            <td><strong><%= change.fieldName %></strong></td>
+                            <td>
+                              <%= change.originalValue %>
+                            </td>
+                            <td class="<%= change.changed ? 'text-primary fw-bold' : '' %>">
+                              <%= change.currentValue %>
+                              <% if (change.changed) { %>
+                                <i class="fas fa-pencil-alt text-primary ms-1" title="Đã thay đổi"></i>
+                              <% } %>
+                            </td>
+                          </tr>
+                        <% }) %>
+                      </tbody>
+                    </table>
+                    <div class="alert alert-info mt-2 small">
+                      <i class="fas fa-info-circle"></i> 
+                      Bảng trên hiển thị sự khác biệt giữa dữ liệu khi tạo sản phẩm và dữ liệu hiện tại.
+                    </div>
+                  </div>
+                </div>
+              <% } else { %>
+                <div class="alert alert-info mt-3">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <span>Không tìm thấy chi tiết cụ thể về sự thay đổi. Sản phẩm có thể đã được cập nhật nhưng chi tiết không còn lưu trữ.</span>
+                </div>
+              <% } %>
+              
+              <!-- Ẩn mã hash vào trong accordion để người dùng vẫn có thể xem nếu muốn -->
+              <div class="accordion mt-3">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="hashHeading">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#hashDetails" aria-expanded="false" aria-controls="hashDetails">
+                      Xem thêm thông tin kỹ thuật (mã hash)
+                    </button>
+                  </h2>
+                  <div id="hashDetails" class="accordion-collapse collapse" aria-labelledby="hashHeading">
+                    <div class="accordion-body">
+                      <p><small class="text-muted">Mã hash được tạo từ dữ liệu sản phẩm và sử dụng để xác thực tính toàn vẹn</small></p>
+                      <p><strong>Mã hash ban đầu:</strong></p>
+                      <pre class="bg-light p-2 rounded"><%= product.originalHash %></pre>
+                      <p><strong>Mã hash hiện tại:</strong></p>
+                      <pre class="bg-light p-2 rounded"><%= product.currentHash %></pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% } else { %>
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>
+                Dữ liệu sản phẩm đã được xác thực trên blockchain
+              </div>
+            <% } %>
+          <% } else if (product.blockchainId === 'Đang xử lý') { %>
+            <div class="alert alert-info">
+              <i class="fas fa-sync fa-spin me-2"></i>
+              Sản phẩm đang chờ được xác thực trên blockchain
+            </div>
+          <% } else { %>
+            <div class="alert alert-secondary">
+              <i class="fas fa-info-circle me-2"></i>
+              Sản phẩm chưa được đưa lên blockchain
+            </div>
+          <% } %>
+        </div>
+      </div>
+
       <% if (product.description) { %>
         <div class="mb-4">
           <h5>Thông tin sản phẩm</h5>

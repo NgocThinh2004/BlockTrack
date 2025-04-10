@@ -226,11 +226,6 @@ exports.updateProduct = async (req, res, next) => {
       });
     }
     
-    // Loại bỏ kiểm tra blockchain
-    // if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
-    //   return res.status(403).render('error', { ... });
-    // }
-    
     // Cập nhật thông tin sản phẩm
     const updates = {
       name: req.body.name,
@@ -244,16 +239,26 @@ exports.updateProduct = async (req, res, next) => {
     
     await Product.updateProduct(productId, updates);
     
-    req.flash('success', 'Sản phẩm đã được cập nhật thành công');
+    // Kiểm tra trạng thái xác thực sau khi cập nhật
+    const updatedProduct = await Product.getProductById(productId);
+    
+    // Thay đổi cách sử dụng flash messages
+    if (updatedProduct && updatedProduct.verified === false) {
+      // Đảm bảo flash đã được khởi tạo
+      if (req.session && typeof req.flash === 'function') {
+        req.flash('warning', 'Sản phẩm đã được cập nhật, nhưng dữ liệu không còn khớp với bản gốc trên blockchain.');
+      }
+    } else {
+      if (req.session && typeof req.flash === 'function') {
+        req.flash('success', 'Sản phẩm đã được cập nhật thành công');
+      }
+    }
+    
     res.redirect(`/products/${productId}`);
   } catch (error) {
+    console.error('Lỗi khi cập nhật sản phẩm:', error);
     next(error);
   }
-};
-
-exports.updateProduct = (req, res) => {
-  const productId = req.params.id;
-  res.redirect(`/products/${productId}`);
 };
 
 /**

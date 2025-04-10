@@ -3,6 +3,7 @@ require('firebase/firestore');
 const { v4: uuidv4 } = require('uuid');
 const blockchainService = require('../services/blockchainService');
 const Activity = require('./activityModel'); // Import Activity model
+const crypto = require('crypto'); // Thêm để tính toán hash
 
 // Reference to products collection
 const productsCollection = firebase.firestore().collection('products');
@@ -13,6 +14,72 @@ const productsCollection = firebase.firestore().collection('products');
  * - Kết nối với blockchain để lưu và xác thực thông tin
  */
 class Product {
+  /**
+   * Tính toán hash từ dữ liệu sản phẩm để xác thực
+   * @param {Object} productData - Dữ liệu sản phẩm
+   * @returns {string} - Mã hash 
+   */
+  static calculateProductHash(productData) {
+    try {
+      console.log('Tính hash cho dữ liệu:', {
+        name: productData.name,
+        manufacturer: productData.manufacturer,
+        // Thêm log để debug
+      });
+      
+      // Chuẩn bị ngày sản xuất để tính toán hash
+      let productionDateStr = '';
+      if (productData.productionDate) {
+        if (productData.productionDate.toDate) {
+          productionDateStr = productData.productionDate.toDate().toISOString().split('T')[0];
+        } else if (productData.productionDate instanceof Date) {
+          productionDateStr = productData.productionDate.toISOString().split('T')[0];
+        } else if (typeof productData.productionDate === 'object' && productData.productionDate.seconds) {
+          productionDateStr = new Date(productData.productionDate.seconds * 1000).toISOString().split('T')[0];
+        } else {
+          productionDateStr = new Date(productData.productionDate).toISOString().split('T')[0];
+        }
+      }
+      
+      // Chuẩn bị ngày hết hạn để tính toán hash
+      let expiryDateStr = null;
+      if (productData.expiryDate) {
+        if (productData.expiryDate.toDate) {
+          expiryDateStr = productData.expiryDate.toDate().toISOString().split('T')[0];
+        } else if (productData.expiryDate instanceof Date) {
+          expiryDateStr = productData.expiryDate.toISOString().split('T')[0];
+        } else if (typeof productData.expiryDate === 'object' && productData.expiryDate.seconds) {
+          expiryDateStr = new Date(productData.expiryDate.seconds * 1000).toISOString().split('T')[0];
+        } else if (productData.expiryDate) {
+          expiryDateStr = new Date(productData.expiryDate).toISOString().split('T')[0];
+        }
+      }
+      
+      // Chọn các trường quan trọng để tính hash
+      const dataToHash = {
+        name: productData.name,
+        manufacturer: productData.manufacturer,
+        origin: productData.origin,
+        description: productData.description || '',
+        batchNumber: productData.batchNumber || '',
+        productionDate: productionDateStr,
+        expiryDate: expiryDateStr
+      };
+      
+      // Chuyển đối tượng thành chuỗi JSON đã sắp xếp để tính toán hash nhất quán
+      const dataString = JSON.stringify(dataToHash, Object.keys(dataToHash).sort());
+      console.log('Chuỗi dữ liệu để tính hash:', dataString);
+      
+      // Tính hash bằng thuật toán SHA-256
+      const hash = crypto.createHash('sha256').update(dataString).digest('hex');
+      console.log('Hash tính được:', hash.substring(0, 10) + '...');
+      return hash;
+    } catch (error) {
+      console.error('Lỗi khi tính toán hash:', error);
+      return crypto.createHash('sha256').update(productData.name || 'unknown').digest('hex');
+    }
+  }
+
   /**
    * Create a new product
    * @param {Object} productData - Product information
@@ -37,9 +104,25 @@ class Product {
         currentStage: 'production',
         blockchainId: null,
         blockchainTxId: null,
+        verified: true, // Mặc định là đã xác thực khi tạo mới
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+
+      // Lưu ngay dữ liệu gốc khi tạo sản phẩm
+      product.originalValues = {
+        name: product.name,
+        manufacturer: product.manufacturer,
+        origin: product.origin,
+        description: product.description,
+        batchNumber: product.batchNumber,
+        productionDate: product.productionDate,
+        expiryDate: product.expiryDate
+      };
+
+      // Tính toán hash ban đầu
+      product.originalHash = this.calculateProductHash(product);
+      product.currentHash = product.originalHash;
       
       // Add product to blockchain
       try {
@@ -141,10 +224,20 @@ class Product {
       if (!product) {
         throw new Error('Product not found');
       }
+      
+      console.log('Sản phẩm hiện tại trước khi cập nhật:', {
+        id: product.id,
+        name: product.name,
+        originalHash: product.originalHash ? product.originalHash.substring(0, 10) + '...' : 'chưa có',
+        hasOriginalValues: !!product.originalValues,
+        originalValuesKeys: product.originalValues ? Object.keys(product.originalValues) : []
+      });
+      
       const updateData = {
         ...updates,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
+      
       // Cập nhật trên blockchain nếu có thể
       try {
         // Luôn thử cập nhật trên blockchain, bất kể trạng thái
@@ -157,8 +250,68 @@ class Product {
         console.error('Error updating product on blockchain:', blockchainError);
         // Vẫn tiếp tục cập nhật database ngay cả khi lỗi blockchain
       }
+      
+      // Đảm bảo originalValues luôn được lưu trữ
+      if (!product.originalValues || Object.keys(product.originalValues).length === 0) {
+        // Chỉ lưu các trường quan trọng thay đổi được
+        const originalFields = ['name', 'manufacturer', 'origin', 'description', 
+                                'batchNumber', 'productionDate', 'expiryDate'];
+        updateData.originalValues = {};
+        originalFields.forEach(field => {
+          if (product[field] !== undefined) {
+            updateData.originalValues[field] = product[field];
+          }
+        });
+        
+        console.log('Đã lưu giá trị gốc của sản phẩm từ dữ liệu hiện tại:', updateData.originalValues);
+      } else {
+        console.log('Giữ nguyên giá trị gốc đã có:', product.originalValues);
+      }
+
+      // Tính toán hash mới từ dữ liệu đã cập nhật
+      const updatedProduct = {
+        ...product,
+        ...updateData
+      };
+      const currentHash = this.calculateProductHash(updatedProduct);
+      
+      // Lấy hash ban đầu từ blockchain hoặc sử dụng giá trị đã lưu
+      let originalHash = product.originalHash;
+      if (!originalHash && product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+        try {
+          originalHash = await blockchainService.getProductHash(product.blockchainId);
+          if (!originalHash) {
+            originalHash = this.calculateProductHash(product);
+          }
+        } catch (hashError) {
+          console.error('Error getting original hash:', hashError);
+          originalHash = this.calculateProductHash(product);
+        }
+      }
+      
+      // Cập nhật thêm thông tin xác thực
+      updateData.currentHash = currentHash;
+      updateData.originalHash = originalHash || currentHash; // Nếu là lần đầu, dùng hash hiện tại làm gốc
+      
+      // Đánh dấu rõ ràng giá trị verified - sửa lại để đảm bảo rõ ràng là true/false
+      const hashesMatch = currentHash === (originalHash || currentHash);
+      updateData.verified = hashesMatch ? true : false;
+      
+      console.log('Dữ liệu cập nhật cuối cùng:', {
+        ...Object.keys(updateData).reduce((obj, key) => {
+          if (key !== 'originalHash' && key !== 'currentHash') {
+            obj[key] = updateData[key];
+          }
+          return obj;
+        }, {}),
+        verified: updateData.verified,
+        hashChanged: !hashesMatch
+      });
+
       // Update in database
       await productsCollection.doc(id).update(updateData);
+      console.log('Cập nhật sản phẩm thành công, ID:', id);
+
       // Ghi lại hoạt động nếu có ownerId
       if (updates.ownerId) {
         await Activity.addActivity({
@@ -170,6 +323,7 @@ class Product {
           description: `Sản phẩm ${updates.name || id} đã được cập nhật`
         });
       }
+      
       return true;
     } catch (error) {
       console.error('Error updating product:', error);

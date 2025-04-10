@@ -296,6 +296,56 @@ class BlockchainService {
       return [];
     }
   }
+
+  /**
+   * Lấy hash của sản phẩm từ blockchain
+   * @param {string} blockchainId - ID sản phẩm trên blockchain
+   * @returns {string|null} - Hash của sản phẩm hoặc null nếu không tìm thấy
+   */
+  async getProductHash(blockchainId) {
+    try {
+      // Trong môi trường thực tế, sẽ truy vấn hash từ blockchain
+      console.log(`Getting hash for product ${blockchainId} from blockchain`);
+      
+      // Tạm thời trả về null để sử dụng hash từ database
+      // Trong triển khai thực tế, đây sẽ là một gọi API tới blockchain
+      return null;
+    } catch (error) {
+      console.error('Blockchain Error (getProductHash):', error);
+      return null;
+    }
+  }
+
+  /**
+   * Lấy dữ liệu gốc của sản phẩm từ blockchain
+   * @param {String} blockchainId - ID sản phẩm trên blockchain
+   * @returns {Object} - Dữ liệu gốc hoặc null nếu không tìm thấy
+   */
+  async getOriginalProductData(blockchainId) {
+    try {
+      // Gọi smart contract method để lấy dữ liệu gốc
+      const productData = await contract.methods
+        .getProduct(blockchainId)
+        .call();
+      
+      if (productData && productData.exists) {
+        // Chuyển đổi dữ liệu từ blockchain về định dạng phù hợp
+        return {
+          name: productData.name,
+          manufacturer: productData.manufacturer,
+          origin: productData.origin,
+          description: productData.description || '',
+          batchNumber: productData.batchNumber || '',
+          productionDate: new Date(productData.productionDate * 1000), // Chuyển đổi timestamp
+          expiryDate: productData.expiryDate ? new Date(productData.expiryDate * 1000) : null
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Blockchain Error (getOriginalProductData):', error);
+      return null;
+    }
+  }
 }
 
 module.exports = new BlockchainService();

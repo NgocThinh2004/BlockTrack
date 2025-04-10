@@ -218,9 +218,20 @@
           
           <!-- Phần hiển thị thông tin blockchain - cập nhật thông báo -->
           <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
-            <div class="alert alert-info">
+            <div class="alert <%= product.verified ? 'alert-info' : 'alert-warning' %>">
               <h5><i class="fas fa-info-circle"></i> Thông tin blockchain</h5>
               <p>Sản phẩm này đã được xác thực trên blockchain với ID: <strong><%= product.blockchainId %></strong></p>
+              
+              <!-- Thêm phần hiển thị trạng thái xác thực -->
+              <% if (product.verified === false) { %>
+                <div class="mt-2 border-top pt-2">
+                  <p class="text-warning mb-0">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    <strong>Cảnh báo:</strong> Dữ liệu sản phẩm đã thay đổi sau khi được xác thực trên blockchain.
+                  </p>
+                </div>
+              <% } %>
+              
               <% if (locals.user && locals.user.id === product.creatorId && product.creatorId !== product.ownerId) { %>
                 <p class="mb-0"><small>Bạn vẫn có thể chỉnh sửa thông tin sản phẩm này vì bạn là người tạo ban đầu.</small></p>
               <% } else if (locals.user && locals.user.id === product.ownerId) { %>

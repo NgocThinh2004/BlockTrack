@@ -20,7 +20,7 @@ router.get('/:id', productController.getProduct);
 
 // Chỉnh sửa sản phẩm
 router.get('/:id/edit', isAuthenticated, loadUser, productController.showEditForm);
-router.post('/:id/edit', isAuthenticated, loadUser, productController.updateProduct);
+router.post('/:id/edit', isAuthenticated, productController.updateProduct);
 
 // Thử lại kết nối blockchain
 router.post('/:id/retry-blockchain', isAuthenticated, loadUser, productController.retryBlockchain);

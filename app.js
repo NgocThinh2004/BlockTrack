@@ -1,7 +1,9 @@
 const express = require('express');
 const path = require('path');
-const expressLayouts = require('express-ejs-layouts');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const flash = require('connect-flash');
+const expressLayouts = require('express-ejs-layouts');
 const ensureDirs = require('./utils/ensureDirs');
 
 // Đảm bảo Firebase đã được khởi tạo
@@ -57,6 +59,32 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Cookie parser
+app.use(cookieParser(process.env.SESSION_SECRET || 'your-secret-key'));
+
+// Session configuration - phải đặt TRƯỚC flash middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Flash messages - đảm bảo đặt SAU session middleware
+app.use(flash());
+
+// Make flash messages available to templates
+app.use((req, res, next) => {
+  res.locals.success_msg = req.flash('success');
+  res.locals.error_msg = req.flash('error');
+  res.locals.warning_msg = req.flash('warning');
+  res.locals.info_msg = req.flash('info');
+  next();
+});
 
 // Make user data available to all views
 app.use((req, res, next) => {
