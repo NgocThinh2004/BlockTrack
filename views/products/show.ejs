@@ -68,33 +68,30 @@
             </div>
           <% } %>
           
-          <% if (locals.user && locals.user.id === product.ownerId) { %>
-            <% if (!product.blockchainId || product.blockchainId === 'Đang xử lý') { %>
+          <!-- Phần hiển thị các nút action - cập nhật điều kiện hiển thị -->
+          <% if (locals.user && (locals.user.id === product.ownerId || locals.user.id === product.creatorId)) { %>
+            <div class="btn-toolbar mb-3">
               <a href="/products/<%= product.id %>/edit" class="btn btn-primary me-2">
-                <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                <i class="fas fa-edit"></i> Chỉnh sửa
               </a>
-            <% } else { %>
-              <!-- Hiển thị nút bị vô hiệu hóa với tooltip để giải thích -->
-              <button class="btn btn-secondary me-2" disabled data-bs-toggle="tooltip" 
-                data-bs-title="Không thể chỉnh sửa thông tin sản phẩm đã được xác thực trên blockchain">
-                <i class="fas fa-lock me-1"></i> Đã khóa
-              </button>
-            <% } %>
-            <% if (!qrCode) { %>
-              <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2" id="generateQrBtn">
-                <i class="fas fa-qrcode me-1"></i> Tạo mã QR
-              </a>
-              <script>
-                document.getElementById('generateQrBtn').addEventListener('click', function() {
-                  this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
-                  this.classList.add('disabled');
-                });
-              </script>
-            <% } %>
-            <!-- Thêm nút chuyển quyền sở hữu -->
-            <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#transferOwnershipModal">
-              <i class="fas fa-exchange-alt me-1"></i> Chuyển quyền sở hữu
-            </button>
+              <% if (!qrCode) { %>
+                <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2" id="generateQrBtn">
+                  <i class="fas fa-qrcode me-1"></i> Tạo mã QR
+                </a>
+                <script>
+                  document.getElementById('generateQrBtn').addEventListener('click', function() {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
+                    this.classList.add('disabled');
+                  });
+                </script>
+              <% } %>
+              <!-- Thêm nút chuyển quyền sở hữu - chỉ hiển thị cho chủ sở hữu hiện tại -->
+              <% if (locals.user.id === product.ownerId) { %>
+                <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#transferOwnershipModal">
+                  <i class="fas fa-exchange-alt me-1"></i> Chuyển quyền sở hữu
+                </button>
+              <% } %>
+            </div>
           <% } %>
           
           <% if (locals.user && product.ownerId === locals.user.id) { %>
@@ -167,12 +164,11 @@
           <p><strong>ID:</strong> <span class="text-monospace"><%= product.blockchainId || 'Đang xử lý' %></span></p>
           <p><strong>Trạng thái:</strong> 
             <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
-              <span class="badge bg-success">Đã xác thực - Không thể sửa đổi</span>
+              <span class="badge bg-success">Đã xác thực</span>
             <% } else { %>
               <span class="badge bg-warning">Đang xử lý</span>
             <% } %>
           </p>
-          
           <hr>
           <div class="d-grid">
             <a href="/track/<%= product.id %>" class="btn btn-outline-primary">
@@ -185,28 +181,25 @@
             <div class="col-md-12">
               <p>
                 <strong>Blockchain ID:</strong> 
-                <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
-                  <span class="blockchain-id">
-                    <%= product.blockchainId %>
+                <span class="blockchain-id">
+                  <%= product.blockchainId || 'Chưa có' %>
+                  <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
                     <button class="btn btn-sm btn-outline-secondary copy-to-clipboard ms-2" 
                             data-clipboard-text="<%= product.blockchainId %>">
                       <i class="fas fa-copy"></i>
                     </button>
-                  </span>
-                <% } else if (product.blockchainId === 'Đang xử lý') { %>
-                  <span class="badge bg-warning text-dark">Đang xử lý</span>
-                  <% if (locals.user && locals.user.id === product.ownerId) { %>
-                    <form action="/products/<%= product.id %>/retry-blockchain" method="POST" class="d-inline">
-                      <button type="submit" class="btn btn-sm btn-primary ms-2">
-                        <i class="fas fa-sync-alt me-1"></i> Thử lại
-                      </button>
-                    </form>
+                  <% } else if (product.blockchainId === 'Đang xử lý') { %>
+                    <span class="badge bg-warning text-dark">Đang xử lý</span>
+                    <% if (locals.user && locals.user.id === product.ownerId) { %>
+                      <form action="/products/<%= product.id %>/retry-blockchain" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-primary ms-2">
+                          <i class="fas fa-sync-alt me-1"></i> Thử lại
+                        </button>
+                      </form>
+                    <% } %>
                   <% } %>
-                <% } else { %>
-                  <span class="badge bg-secondary">Chưa có</span>
-                <% } %>
+                </span>
               </p>
-              
               <% if (product.blockchainTxId) { %>
                 <p>
                   <strong>Transaction Hash:</strong>
@@ -215,7 +208,6 @@
                   </span>
                 </p>
               <% } %>
-              
               <% if (product.blockchainError) { %>
                 <div class="alert alert-warning">
                   <strong>Lỗi blockchain:</strong> <%= product.blockchainError %>
@@ -223,6 +215,32 @@
               <% } %>
             </div>
           </div>
+          
+          <!-- Phần hiển thị thông tin blockchain - cập nhật thông báo -->
+          <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
+            <div class="alert alert-info">
+              <h5><i class="fas fa-info-circle"></i> Thông tin blockchain</h5>
+              <p>Sản phẩm này đã được xác thực trên blockchain với ID: <strong><%= product.blockchainId %></strong></p>
+              <% if (locals.user && locals.user.id === product.creatorId && product.creatorId !== product.ownerId) { %>
+                <p class="mb-0"><small>Bạn vẫn có thể chỉnh sửa thông tin sản phẩm này vì bạn là người tạo ban đầu.</small></p>
+              <% } else if (locals.user && locals.user.id === product.ownerId) { %>
+                <p class="mb-0"><small>Bạn vẫn có thể chỉnh sửa thông tin sản phẩm này.</small></p>
+              <% } %>
+            </div>
+          <% } else if (product.blockchainId === 'Đang xử lý') { %>
+            <!-- Phần xử lý "Đang xử lý" giữ nguyên -->
+            <div class="alert alert-warning">
+              <h5><i class="fas fa-exclamation-triangle"></i> Đang xử lý</h5>
+              <p>Sản phẩm này đang được xác thực trên blockchain.</p>
+              <% if (user && product.ownerId === user.id) { %>
+                <form action="/products/<%= product.id %>/retry-blockchain" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-warning">
+                    <i class="fas fa-sync"></i> Thử lại xác thực
+                  </button>
+                </form>
+              <% } %>
+            </div>
+          <% } %>
         </div>
       </div>
     </div>
@@ -237,6 +255,7 @@
         <h5 class="modal-title" id="transferOwnershipModalLabel">Chuyển quyền sở hữu sản phẩm</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
+      <!-- Fix: Xóa thẻ đóng form ở đây -->
       <form action="/products/<%= product.id %>/transfer" method="POST">
         <div class="modal-body">
           <div class="alert alert-warning">

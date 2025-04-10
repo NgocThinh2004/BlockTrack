@@ -26,15 +26,16 @@ class Activity {
         return null;
       }
       
-      // Tạo key để phát hiện trùng lặp
-      const cacheKey = `${activityData.userId}_${activityData.type}_${activityData.entityId || ''}_${activityData.entityName || ''}`;
+      // Tạo key để phát hiện trùng lặp - thêm timestamp để cải thiện unique key
+      const cacheKey = `${activityData.userId}_${activityData.type}_${activityData.entityId || ''}_${activityData.entityName || ''}_${Date.now()}`;
       
-      // Kiểm tra hoạt động trùng lặp trong thời gian gần đây (5 giây)
       const now = Date.now();
-      if (recentActivitiesCache.has(cacheKey)) {
+      
+      // Chỉ kiểm tra trùng lặp cho hoạt động không phải product_created
+      if (activityData.type !== 'product_created' && recentActivitiesCache.has(cacheKey)) {
         const cachedTime = recentActivitiesCache.get(cacheKey);
-        // Nếu hoạt động tương tự đã được ghi trong 5 giây trước, bỏ qua
-        if (now - cachedTime < 5000) {
+        // Giảm thời gian kiểm tra trùng lặp xuống 2 giây
+        if (now - cachedTime < 2000) {
           console.log('Phát hiện hoạt động trùng lặp, bỏ qua:', cacheKey);
           return null;
         }
@@ -43,10 +44,10 @@ class Activity {
       // Thêm vào cache để tránh trùng lặp
       recentActivitiesCache.set(cacheKey, now);
       
-      // Dọn cache cũ định kỳ (giữ cache trong 10 phút)
-      const TEN_MINUTES = 10 * 60 * 1000;
+      // Dọn cache cũ định kỳ (giữ cache trong 5 phút thay vì 10 phút)
+      const FIVE_MINUTES = 5 * 60 * 1000;
       for (const [key, timestamp] of recentActivitiesCache.entries()) {
-        if (now - timestamp > TEN_MINUTES) {
+        if (now - timestamp > FIVE_MINUTES) {
           recentActivitiesCache.delete(key);
         }
       }
@@ -84,7 +85,6 @@ class Activity {
       };
     } catch (error) {
       console.error('Lỗi khi thêm hoạt động:', error);
-      // Return null thay vì empty object để dễ debug hơn
       return null;
     }
   }
@@ -99,100 +99,101 @@ class Activity {
     try {
       console.log(`Đang lấy ${limit} hoạt động cho người dùng: ${userId}`);
       
+      let activities = [];
+      let snapshot;
+      
+      // Cố gắng lấy hoạt động với orderBy
       try {
-        // Thử sử dụng orderBy để sắp xếp theo thời gian giảm dần
-        const snapshot = await activitiesCollection
+        snapshot = await activitiesCollection
           .where('userId', '==', userId)
           .orderBy('timestamp', 'desc')
           .limit(limit)
           .get();
         
         console.log(`Đã lấy được ${snapshot.size} hoạt động từ database với orderBy`);
-        return snapshot.docs.map(doc => {
-          const data = doc.data();
-          // Chuẩn hóa timestamp
-          let timestamp;
-          if (data.timestamp) {
-            if (typeof data.timestamp.toDate === 'function') {
-              timestamp = data.timestamp.toDate();
-            } else if (data.timestamp instanceof Date || !isNaN(new Date(data.timestamp))) {
-              timestamp = new Date(data.timestamp);
+        
+        if (!snapshot.empty) {
+          activities = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Chuẩn hóa timestamp
+            let timestamp;
+            if (data.timestamp) {
+              if (typeof data.timestamp.toDate === 'function') {
+                timestamp = data.timestamp.toDate();
+              } else if (data.timestamp instanceof Date || !isNaN(new Date(data.timestamp))) {
+                timestamp = new Date(data.timestamp);
+              } else {
+                timestamp = new Date();
+              }
             } else {
               timestamp = new Date();
             }
-          } else {
-            timestamp = new Date();
-          }
+            
+            return {
+              id: doc.id,
+              ...data,
+              timestamp: timestamp
+            };
+          });
           
-          return {
-            id: doc.id,
-            ...data,
-            timestamp: timestamp
-          };
-        });
-      } catch (indexError) {
-        // Nếu không có index, sử dụng cách khác không cần orderBy
-        console.warn('Lỗi index trong Firestore, sử dụng phương pháp thay thế');
-        const fallbackSnapshot = await activitiesCollection
+          return activities;
+        }
+      } catch (error) {
+        // Nếu lỗi là do thiếu index, thử phương pháp khác
+        if (error.code === 'failed-precondition') {
+          console.warn('Firestore index not yet created for activities. Creating index is recommended.');
+          // Tiếp tục thực hiện phương pháp thay thế
+        } else {
+          // Nếu là lỗi khác, ném lại để xử lý bên ngoài
+          throw error;
+        }
+      }
+      
+      // Nếu không lấy được với orderBy hoặc không có kết quả, thử phương pháp khác
+      if (!activities.length) {
+        snapshot = await activitiesCollection
           .where('userId', '==', userId)
-          .limit(100)  // Lấy nhiều hơn để đảm bảo có đủ dữ liệu sau khi sắp xếp
           .get();
         
-        console.log(`Sử dụng phương pháp thay thế. Lấy ${fallbackSnapshot.size} hoạt động`);
+        console.log(`Sử dụng phương pháp thay thế. Lấy ${snapshot.size} hoạt động`);
         
-        if (fallbackSnapshot.empty) {
-          console.log('Không có hoạt động nào cho userId:', userId);
-          return [];
-        }
-        
-        // Chuyển đổi snapshot thành array và xử lý timestamp
-        const activities = fallbackSnapshot.docs.map(doc => {
-          const data = doc.data();
-          
-          // Xử lý timestamp từ Firestore
-          let timestamp;
-          if (data.timestamp) {
-            if (typeof data.timestamp.toDate === 'function') {
-              timestamp = data.timestamp.toDate();
-            } else if (data.timestamp instanceof Date || !isNaN(new Date(data.timestamp))) {
-              timestamp = new Date(data.timestamp);
+        if (!snapshot.empty) {
+          // Chuyển đổi và xử lý timestamp
+          activities = snapshot.docs.map(doc => {
+            const data = doc.data();
+            let timestamp;
+            
+            if (data.timestamp) {
+              if (typeof data.timestamp.toDate === 'function') {
+                timestamp = data.timestamp.toDate();
+              } else if (data.timestamp instanceof Date || !isNaN(new Date(data.timestamp))) {
+                timestamp = new Date(data.timestamp);
+              } else {
+                timestamp = new Date();
+              }
             } else {
-              timestamp = new Date(); // Fallback
+              timestamp = new Date();
             }
-          } else {
-            timestamp = new Date(); // Default
-          }
+            
+            return {
+              id: doc.id,
+              ...data,
+              timestamp: timestamp
+            };
+          });
           
-          return {
-            id: doc.id,
-            ...data,
-            timestamp: timestamp
-          };
-        });
-        
-        // Sắp xếp theo thời gian (mới nhất trước)
-        activities.sort((a, b) => b.timestamp - a.timestamp);
-        
-        // Giới hạn kết quả theo limit
-        const limitedActivities = activities.slice(0, limit);
-        
-        console.log(`Trả về ${limitedActivities.length} hoạt động đã sắp xếp`);
-        
-        // Debug log hoạt động đầu tiên
-        if (limitedActivities.length > 0) {
-          console.log('Hoạt động đầu tiên:', JSON.stringify({
-            id: limitedActivities[0].id,
-            type: limitedActivities[0].type,
-            description: limitedActivities[0].description,
-            timestamp: limitedActivities[0].timestamp
-          }));
+          // Sắp xếp theo thời gian giảm dần
+          activities.sort((a, b) => b.timestamp - a.timestamp);
+          
+          // Giới hạn kết quả
+          activities = activities.slice(0, limit);
         }
-        
-        return limitedActivities;
       }
+      
+      return activities;
     } catch (error) {
       console.error('Lỗi khi lấy hoạt động:', error);
-      return [];
+      return []; // Trả về mảng rỗng thay vì ném lỗi
     }
   }
   

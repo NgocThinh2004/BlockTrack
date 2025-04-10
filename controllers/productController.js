@@ -151,28 +151,27 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-exports.showEditForm = (req, res) => {
-  const productId = req.params.id;
-  
-  // Dữ liệu mẫu
-  const product = {
-    id: productId,
-    name: "Sản phẩm " + productId,
-    manufacturer: "Công ty ABC",
-    origin: "Việt Nam",
-    productionDate: new Date(),
-    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-    currentStage: "production",
-    blockchainId: "0x123456789",
-    createdAt: new Date(),
-    ownerId: req.session.userId || '',
-    description: "Mô tả sản phẩm chi tiết"
-  };
-  
-  res.render('products/edit', { 
-    title: 'Chỉnh sửa: ' + product.name,
-    product 
-  });
+exports.showEditForm = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Sử dụng phương thức canEditProduct để kiểm tra quyền chỉnh sửa
+    const hasPermission = await Product.canEditProduct(productId, req.session.userId);
+    if (!hasPermission) {
+      return res.status(403).render('error', { 
+        message: 'Bạn không có quyền chỉnh sửa sản phẩm này' 
+      });
+    }
+    
+    res.render('products/edit', { product, title: `Chỉnh sửa ${product.name}` });
+  } catch (error) {
+    next(error);
+  }
 };
 
 exports.editProductPage = async (req, res, next) => {
@@ -184,8 +183,9 @@ exports.editProductPage = async (req, res, next) => {
       return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
     }
     
-    // Kiểm tra quyền sở hữu
-    if (product.ownerId !== req.session.userId) {
+    // Sử dụng phương thức canEditProduct để kiểm tra quyền chỉnh sửa
+    const hasPermission = await Product.canEditProduct(productId, req.session.userId);
+    if (!hasPermission) {
       return res.status(403).render('error', { 
         message: 'Bạn không có quyền chỉnh sửa sản phẩm này' 
       });
@@ -218,22 +218,34 @@ exports.updateProduct = async (req, res, next) => {
       return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
     }
     
-    // Kiểm tra quyền sở hữu
-    if (product.ownerId !== req.session.userId) {
+    // Sử dụng phương thức canEditProduct để kiểm tra quyền chỉnh sửa
+    const hasPermission = await Product.canEditProduct(productId, req.session.userId);
+    if (!hasPermission) {
       return res.status(403).render('error', { 
         message: 'Bạn không có quyền chỉnh sửa sản phẩm này' 
       });
     }
     
-    // Kiểm tra trạng thái blockchain - không cho phép chỉnh sửa nếu đã có trên blockchain
-    if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
-      return res.status(403).render('error', { 
-        message: 'Không thể chỉnh sửa sản phẩm đã được xác thực trên blockchain' 
-      });
-    }
+    // Loại bỏ kiểm tra blockchain
+    // if (product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+    //   return res.status(403).render('error', { ... });
+    // }
     
-    // Nếu tất cả kiểm tra OK, tiếp tục với việc cập nhật
-    // ...existing code for updating product...
+    // Cập nhật thông tin sản phẩm
+    const updates = {
+      name: req.body.name,
+      manufacturer: req.body.manufacturer,
+      origin: req.body.origin,
+      description: req.body.description,
+      batchNumber: req.body.batchNumber,
+      productionDate: new Date(req.body.productionDate),
+      expiryDate: req.body.expiryDate ? new Date(req.body.expiryDate) : null
+    };
+    
+    await Product.updateProduct(productId, updates);
+    
+    req.flash('success', 'Sản phẩm đã được cập nhật thành công');
+    res.redirect(`/products/${productId}`);
   } catch (error) {
     next(error);
   }

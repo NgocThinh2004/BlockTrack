@@ -1,0 +1,65 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Hoạt động gần đây</h5>
+    <button id="refreshActivities" class="btn btn-sm btn-outline-primary">
+      <i class="fas fa-sync-alt"></i> Làm mới
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <div class="activities-container">
+      <% if (activities && activities.length > 0) { %>
+        <ul class="list-group list-group-flush">
+          <% activities.forEach(activity => { %>
+            <li class="list-group-item px-3 py-2">
+              <p class="mb-1 d-flex justify-content-between">
+                <strong><%= activity.description %></strong>
+                <small class="text-muted">
+                  <% if (activity.timestamp) { %>
+                    <%= typeof activity.timestamp.toLocaleString === 'function' ? 
+                         activity.timestamp.toLocaleString('vi-VN', {hour: '2-digit', minute: '2-digit'}) : 'N/A' %>
+                  <% } else { %>N/A<% } %>
+                </small>
+              </p>
+            </li>
+          <% }); %>
+        </ul>
+      <% } else { %>
+        <div class="text-center py-4">
+          <p class="text-muted mb-0">Chưa có hoạt động nào</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('refreshActivities').addEventListener('click', function() {
+  const button = this;
+  const originalContent = button.innerHTML;
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang làm mới...';
+  button.disabled = true;
+  
+  // Gọi API để lấy dữ liệu hoạt động mới
+  fetch('/api/activities/refresh', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      alert('Không thể làm mới hoạt động: ' + data.message);
+      button.innerHTML = originalContent;
+      button.disabled = false;
+    }
+  })
+  .catch(error => {
+    console.error('Lỗi khi làm mới hoạt động:', error);
+    button.innerHTML = originalContent;
+    button.disabled = false;
+  });
+});
+</script>

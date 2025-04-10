@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isAuthenticated } = require('../middlewares/auth');
 const User = require('../models/userModel');
+const apiController = require('../controllers/apiController');
 
 // API để tìm người dùng theo email và vai trò
 router.get('/users/find', isAuthenticated, async (req, res) => {
@@ -74,5 +75,8 @@ router.get('/users/find-by-wallet', isAuthenticated, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// Thêm route để làm mới hoạt động
+router.post('/activities/refresh', apiController.refreshActivities);
 
 module.exports = router;
