@@ -60,6 +60,7 @@ exports.getProducerDashboard = async (req, res, next) => {
     const productsByStage = {
       production: currentProducts.filter(p => p.currentStage === 'production').length,
       packaging: currentProducts.filter(p => p.currentStage === 'packaging').length,
+      qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
       distribution: 0 // Sẽ được cập nhật bên dưới
     };
     
@@ -67,6 +68,7 @@ exports.getProducerDashboard = async (req, res, next) => {
     const distributionProducts = transferredProducts.filter(p => p.currentStage === 'distribution');
     productsByStage.distribution = distributionProducts.length;
     console.log(`[DASHBOARD] Distribution products: ${productsByStage.distribution}`);
+    console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
 
     // Phương pháp 2: Kiểm tra từ bảng giai đoạn sản phẩm (nếu số lượng vẫn không chính xác)
     if (productsByStage.distribution === 0) {
@@ -95,7 +97,7 @@ exports.getProducerDashboard = async (req, res, next) => {
       user,
       products,
       productsByStage,
-      productsCount: currentProducts.length, // Giữ nguyên chỉ đếm sản phẩm hiện tại cho tổng sản phẩm
+      productsCount: productsByStage.production + productsByStage.packaging + productsByStage.qr_generated + productsByStage.distribution, // Cập nhật cách tính tổng sản phẩm bao gồm cả QR
       activities: activities || [], // Đảm bảo luôn có một mảng, tránh lỗi
       title: 'Nhà sản xuất Dashboard'
     });
@@ -141,9 +143,12 @@ exports.getDistributorDashboard = async (req, res, next) => {
     // Đếm số lượng sản phẩm theo giai đoạn - chỉ đếm sản phẩm hiện tại
     const productsByStage = {
       inTransit: currentProducts.filter(p => p.currentStage === 'distribution').length,
-      delivered: currentProducts.filter(p => !['distribution', 'in_transit'].includes(p.currentStage)).length
+      qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
+      delivered: currentProducts.filter(p => !['distribution', 'in_transit', 'qr_generated'].includes(p.currentStage)).length
     };
     
+    console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
+
     // Lấy chính xác 5 hoạt động gần đây
     const activities = await Activity.getActivitiesByUser(userId, 5);
     console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for distributor dashboard`);
@@ -197,8 +202,11 @@ exports.getRetailerDashboard = async (req, res, next) => {
     // Đếm số lượng sản phẩm theo giai đoạn - chỉ đếm sản phẩm hiện tại
     const productsByStage = {
       inStock: currentProducts.filter(p => p.currentStage === 'retail').length,
+      qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
       sold: currentProducts.filter(p => p.currentStage === 'sold').length
     };
+
+    console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
     
     // Lấy chính xác 5 hoạt động gần đây
     const activities = await Activity.getActivitiesByUser(userId, 5);

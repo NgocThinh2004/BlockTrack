@@ -6,25 +6,26 @@
     </a>
   </div>
   
-  <!-- Stats Cards -->
+  <!-- Thẻ Tổng sản phẩm kéo dài -->
   <div class="row mb-4">
-    <div class="col-md-3 mb-3 mb-md-0">
-      <div class="card bg-primary text-white h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h6 class="mb-0">Tổng sản phẩm</h6>
-              <h2 class="mt-2 mb-0"><%= (productsByStage.production || 0) + (productsByStage.packaging || 0) + (productsByStage.distribution || 0) %></h2>
-            </div>
-            <div>
-              <i class="fas fa-box fa-3x opacity-50"></i>
+    <div class="col-12">
+      <div class="card bg-primary text-white h-100 shadow-lg border-0">
+        <div class="card-body py-4">
+          <div class="text-center">
+            <h5 class="mb-3 text-uppercase fw-bold">Tổng sản phẩm</h5>
+            <div class="d-flex justify-content-center align-items-center">
+              <i class="fas fa-box fa-3x me-3"></i>
+              <h1 class="display-4 fw-bold mb-0"><%= (productsByStage.production || 0) + (productsByStage.packaging || 0) + (productsByStage.qr_generated || 0) + (productsByStage.distribution || 0) %></h1>
             </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <div class="col-md-3 mb-3 mb-md-0">
+  </div>
+  
+  <!-- Bốn thẻ chi tiết với kích thước bằng nhau -->
+  <div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
       <div class="card bg-info text-white h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -40,7 +41,7 @@
       </div>
     </div>
     
-    <div class="col-md-3 mb-3 mb-md-0">
+    <div class="col-lg-3 col-md-6 mb-3">
       <div class="card bg-warning text-white h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -56,7 +57,23 @@
       </div>
     </div>
     
-    <div class="col-md-3">
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card bg-secondary text-white h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-0">Đã tạo mã QR</h6>
+              <h2 class="mt-2 mb-0"><%= productsByStage.qr_generated || 0 %></h2>
+            </div>
+            <div>
+              <i class="fas fa-qrcode fa-3x opacity-50"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
       <div class="card bg-success text-white h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center">
@@ -195,7 +212,7 @@
                         activity.type === 'product_created' ? 'bg-success' : 
                         activity.type === 'stage_added' && activity.entityName === 'packaging' ? 'bg-info' : 
                         activity.type === 'stage_added' && activity.entityName === 'distribution' ? 'bg-warning' :
-                        activity.type === 'stage_added' && activity.entityName === 'retail' ? 'bg-primary' :
+                        activity.type === 'stage_added' && activity.entityName === 'retail' ? 'bg-success' :
                         activity.type === 'ownership_transferred' ? 'bg-danger' :
                         activity.type === 'ownership_received' ? 'bg-success' :
                         activity.type === 'qr_generated' ? 'bg-secondary' : 'bg-primary' 
@@ -238,7 +255,7 @@
                           </small>
                           <% if (activity.entityType === 'stage') { %>
                             <span class="badge bg-<%= 
-                              activity.entityName === 'production' ? 'primary' : 
+                              activity.entityName === 'production' ? 'info' : 
                               activity.entityName === 'packaging' ? 'info' : 
                               activity.entityName === 'distribution' ? 'warning' : 
                               activity.entityName === 'retail' ? 'success' : 
@@ -289,16 +306,18 @@
       {
         type: 'doughnut',
         data: {
-          labels: ['Sản xuất', 'Đóng gói', 'Đã giao vận chuyển'],
+          labels: ['Sản xuất', 'Đóng gói', 'Tạo mã QR', 'Đã giao vận chuyển'],
           datasets: [{
             data: [
               <%= productsByStage.production || 0 %>, 
-              <%= productsByStage.packaging || 0 %>, 
+              <%= productsByStage.packaging || 0 %>,
+              <%= productsByStage.qr_generated || 0 %>,
               <%= productsByStage.distribution || 0 %>
             ],
             backgroundColor: [
-              '#0d6efd', 
-              '#ffc107', 
+              '#0dcaf0', // Thay đổi từ #0d6efd (primary) sang #0dcaf0 (info) cho Sản xuất
+              '#ffc107',
+              '#6c757d', 
               '#198754'
             ]
           }]

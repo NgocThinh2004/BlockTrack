@@ -32,13 +32,14 @@
             
             <div class="row">
               <div class="col-md-6 mb-3">
-                <label for="productionDate" class="form-label">Ngày sản xuất</label>
-                <input type="date" class="form-control" id="productionDate" name="productionDate" value="<%= product.productionDate ? new Date(product.productionDate).toISOString().split('T')[0] : '' %>" readonly>
+                <label for="productionDate" class="form-label">Ngày sản xuất <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="productionDate" name="productionDate" value="<%= product.productionDate ? new Date(product.productionDate.seconds ? product.productionDate.seconds * 1000 : product.productionDate).toISOString().split('T')[0] : '' %>" required>
               </div>
               
               <div class="col-md-6 mb-3">
                 <label for="expiryDate" class="form-label">Hạn sử dụng</label>
-                <input type="date" class="form-control" id="expiryDate" name="expiryDate" value="<%= product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : '' %>">
+                <input type="date" class="form-control" id="expiryDate" name="expiryDate" value="<%= product.expiryDate ? new Date(product.expiryDate.seconds ? product.expiryDate.seconds * 1000 : product.expiryDate).toISOString().split('T')[0] : '' %>">
+                <div class="form-text">Để trống nếu không có hạn sử dụng.</div>
               </div>
             </div>
             
