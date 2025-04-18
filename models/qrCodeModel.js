@@ -18,11 +18,17 @@ class QRCode {
       const qrId = uuidv4();
       
       // Tạo URL cho sản phẩm - URL này sẽ được mã hóa thành QR code
-      // Fix: Sử dụng đường dẫn tương đối để tránh vấn đề với domain
       const productUrl = `/track/${productId}`;
       
       console.log('Creating QR code for product:', productId);
       console.log('Product URL for QR:', productUrl);
+      
+      // Kiểm tra xem sản phẩm đã có QR code chưa
+      const existingQR = await this.getQRCodeByProductId(productId);
+      if (existingQR) {
+        console.log('QR code already exists for product:', productId);
+        return existingQR;
+      }
       
       // Sử dụng QRCodeService để tạo QR code
       const qrImageUrl = await QRCodeService.generate(productUrl);
@@ -58,7 +64,7 @@ class QRCode {
           });
           console.log('Đã thêm activity thành công khi tạo QR code');
           
-          // Thêm mới: Tạo một giai đoạn trong lịch sử sản phẩm khi tạo QR
+          // Tạo một giai đoạn trong lịch sử sản phẩm khi tạo QR
           const ProductStage = require('./stageModel');
           const stageData = {
             productId: productId,

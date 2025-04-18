@@ -75,15 +75,36 @@
                 <i class="fas fa-edit"></i> Chỉnh sửa
               </a>
               <% if (!qrCode) { %>
-                <a href="/qr/<%= product.id %>/generate" class="btn btn-info me-2" id="generateQrBtn">
+                <a href="/qr/<%= product.id %>/generate" 
+                   class="btn btn-info me-2 <%= !canCreateQR ? 'disabled' : '' %>" 
+                   id="generateQrBtn"
+                   <% if (!canCreateQR) { %>
+                   aria-disabled="true" 
+                   data-needs-packaging="<%= needsPackaging %>"
+                   data-bs-toggle="tooltip"
+                   title="<%= needsPackaging ? 'Sản phẩm phải được đóng gói trước khi tạo mã QR' : 'Bạn không thể tạo mã QR lúc này' %>"
+                   <% } %>>
                   <i class="fas fa-qrcode me-1"></i> Tạo mã QR
                 </a>
                 <script>
-                  document.getElementById('generateQrBtn').addEventListener('click', function() {
+                  document.getElementById('generateQrBtn').addEventListener('click', function(e) {
+                    if (this.classList.contains('disabled')) {
+                      e.preventDefault();
+                      if (this.getAttribute('data-needs-packaging') === 'true') {
+                        alert('Sản phẩm phải được đóng gói trước khi tạo mã QR. Vui lòng thêm giai đoạn đóng gói trước.');
+                      } else {
+                        alert('Không thể tạo mã QR cho sản phẩm này.');
+                      }
+                      return false;
+                    }
                     this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
                     this.classList.add('disabled');
                   });
                 </script>
+              <% } else { %>
+                <a href="/qr/<%= product.id %>/view" class="btn btn-success me-2">
+                  <i class="fas fa-qrcode me-1"></i> Xem mã QR
+                </a>
               <% } %>
               <!-- Thêm nút chuyển quyền sở hữu - chỉ hiển thị cho chủ sở hữu hiện tại -->
               <% if (locals.user.id === product.ownerId) { %>
@@ -175,7 +196,6 @@
               <i class="fas fa-search me-1"></i> Xem dữ liệu truy xuất
             </a>
           </div>
-          
           <!-- Thông tin blockchain -->
           <div class="row mb-3">
             <div class="col-md-12">
@@ -215,13 +235,11 @@
               <% } %>
             </div>
           </div>
-          
           <!-- Phần hiển thị thông tin blockchain - cập nhật thông báo -->
           <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
             <div class="alert <%= product.verified ? 'alert-info' : 'alert-warning' %>">
               <h5><i class="fas fa-info-circle"></i> Thông tin blockchain</h5>
               <p>Sản phẩm này đã được xác thực trên blockchain với ID: <strong><%= product.blockchainId %></strong></p>
-              
               <!-- Thêm phần hiển thị trạng thái xác thực -->
               <% if (product.verified === false) { %>
                 <div class="mt-2 border-top pt-2">
@@ -231,7 +249,6 @@
                   </p>
                 </div>
               <% } %>
-              
               <% if (locals.user && locals.user.id === product.creatorId && product.creatorId !== product.ownerId) { %>
                 <p class="mb-0"><small>Bạn vẫn có thể chỉnh sửa thông tin sản phẩm này vì bạn là người tạo ban đầu.</small></p>
               <% } else if (locals.user && locals.user.id === product.ownerId) { %>
@@ -257,7 +274,7 @@
     </div>
   </div>
 </div>
-
+              
 <!-- Modal Chuyển quyền sở hữu - Đã tối ưu -->
 <div class="modal fade" id="transferOwnershipModal" tabindex="-1" aria-labelledby="transferOwnershipModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -273,7 +290,6 @@
             <i class="fas fa-exclamation-triangle me-2"></i> 
             Lưu ý: Sau khi chuyển quyền sở hữu, bạn sẽ không còn quyền quản lý sản phẩm này nữa.
           </div>
-          
           <!-- Phương thức chuyển -->
           <div class="mb-3">
             <label for="transferType" class="form-label">Phương thức chuyển</label>
@@ -292,12 +308,10 @@
                 <option value="wallet">Tìm theo địa chỉ ví</option>
               </select>
             </div>
-            
             <div id="emailInputGroup" class="mb-3">
               <label for="recipientEmail" class="form-label">Email người nhận</label>
               <input type="email" class="form-control" id="recipientEmail" name="recipientEmail" placeholder="Nhập email người nhận">
             </div>
-            
             <div id="walletInputGroup" class="mb-3" style="display:none;">
               <label for="recipientWallet" class="form-label">Địa chỉ ví người nhận</label>
               <input type="text" class="form-control" id="recipientWallet" name="recipientWallet" placeholder="Nhập địa chỉ ví">
@@ -313,7 +327,6 @@
                 <option value="wallet">Tìm theo địa chỉ ví</option>
               </select>
             </div>
-            
             <div id="distributorEmailGroup" class="mb-3">
               <label for="distributorEmail" class="form-label">Email đơn vị vận chuyển</label>
               <div class="input-group">
@@ -332,7 +345,6 @@
               </div>
               <div id="distributorWalletResult" class="mt-2"></div>
             </div>
-            
             <div class="mb-3">
               <label for="finalRecipientType" class="form-label">Tìm người nhận cuối</label>
               <select class="form-select" id="finalRecipientType" name="finalRecipientType">
@@ -340,7 +352,6 @@
                 <option value="wallet">Tìm theo địa chỉ ví</option>
               </select>
             </div>
-            
             <div id="finalRecipientEmailGroup" class="mb-3">
               <label for="finalRecipientEmail" class="form-label">Email người nhận cuối</label>
               <div class="input-group">
@@ -350,7 +361,6 @@
               <div id="finalRecipientResult" class="mt-2"></div>
               <input type="hidden" id="finalRecipientId" name="finalRecipientId">
             </div>
-            
             <div id="finalRecipientWalletGroup" class="mb-3" style="display:none;">
               <label for="finalRecipientWallet" class="form-label">Địa chỉ ví người nhận cuối</label>
               <div class="input-group">
@@ -360,14 +370,12 @@
               <div id="finalRecipientWalletResult" class="mt-2"></div>
             </div>
           </div>
-          
           <!-- Thông tin chung -->
           <div class="mb-3">
             <label for="location" class="form-label">Địa chỉ giao hàng</label>
             <input type="text" class="form-control" id="location" name="location" placeholder="Nhập địa chỉ giao hàng">
             <small class="form-text text-muted">Địa điểm nhận hàng của người nhận</small>
           </div>
-          
           <div class="mb-3">
             <label for="transferReason" class="form-label">Lý do chuyển quyền sở hữu</label>
             <select class="form-select" id="transferReason" name="transferReason" required>
@@ -378,7 +386,6 @@
               <option value="other">Lý do khác</option>
             </select>
           </div>
-          
           <div class="mb-3" id="otherReasonGroup" style="display:none;">
             <label for="otherReason" class="form-label">Lý do khác</label>
             <textarea class="form-control" id="otherReason" name="otherReason" rows="2"></textarea>
@@ -393,7 +400,7 @@
   </div>
 </div>
 
-<script>
+<script>  
   // Script để xử lý hiển thị các trường nhập liệu trong modal
   document.addEventListener('DOMContentLoaded', function() {
     const recipientTypeSelect = document.getElementById('recipientType');
@@ -446,7 +453,6 @@
     const transferTypeSelect = document.getElementById('transferType');
     const directRecipientSection = document.getElementById('directRecipientSection');
     const viaDistributorSection = document.getElementById('viaDistributorSection');
-    
     transferTypeSelect.addEventListener('change', function() {
       if (this.value === 'direct') {
         directRecipientSection.style.display = 'block';
@@ -467,7 +473,15 @@
       if (!email) return;
       
       try {
+        document.getElementById('distributorResult').innerHTML = 
+          `<div class="alert alert-info">Đang tìm kiếm...</div>`;
+          
         const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=distributor`);
+        
+        if (!response.ok) {
+          throw new Error(`Lỗi HTTP: ${response.status} - ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.success && data.user) {
@@ -480,8 +494,9 @@
           document.getElementById('distributorId').value = '';
         }
       } catch (error) {
+        console.error('Lỗi tìm người dùng:', error);
         document.getElementById('distributorResult').innerHTML = 
-          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+          `<div class="alert alert-danger">Lỗi: ${error.message || 'Không thể kết nối đến máy chủ'}</div>`;
       }
     });
     
@@ -491,7 +506,15 @@
       if (!email) return;
       
       try {
+        document.getElementById('finalRecipientResult').innerHTML = 
+          `<div class="alert alert-info">Đang tìm kiếm...</div>`;
+          
         const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=retailer`);
+        
+        if (!response.ok) {
+          throw new Error(`Lỗi HTTP: ${response.status} - ${response.statusText}`);
+        }
+        
         const data = await response.json();
         
         if (data.success && data.user) {
@@ -504,8 +527,9 @@
           document.getElementById('finalRecipientId').value = '';
         }
       } catch (error) {
+        console.error('Lỗi tìm người nhận:', error);
         document.getElementById('finalRecipientResult').innerHTML = 
-          `<div class="alert alert-danger">Lỗi: ${error.message}</div>`;
+          `<div class="alert alert-danger">Lỗi: ${error.message || 'Không thể kết nối đến máy chủ'}</div>`;
       }
     });
     
@@ -513,7 +537,6 @@
     const distributorTypeSelect = document.getElementById('distributorType');
     const distributorEmailGroup = document.getElementById('distributorEmailGroup');
     const distributorWalletGroup = document.getElementById('distributorWalletGroup');
-    
     distributorTypeSelect.addEventListener('change', function() {
       if (this.value === 'email') {
         distributorEmailGroup.style.display = 'block';
@@ -528,7 +551,6 @@
     const finalRecipientTypeSelect = document.getElementById('finalRecipientType');
     const finalRecipientEmailGroup = document.getElementById('finalRecipientEmailGroup');
     const finalRecipientWalletGroup = document.getElementById('finalRecipientWalletGroup');
-    
     finalRecipientTypeSelect.addEventListener('change', function() {
       if (this.value === 'email') {
         finalRecipientEmailGroup.style.display = 'block';
@@ -543,7 +565,6 @@
     document.getElementById('findDistributorBtn').addEventListener('click', async function() {
       const email = document.getElementById('distributorEmail').value;
       if (!email) return;
-      
       try {
         const response = await fetch(`/api/users/find?email=${encodeURIComponent(email)}&role=distributor`);
         const data = await response.json();
@@ -567,7 +588,6 @@
     document.getElementById('findDistributorByWalletBtn').addEventListener('click', async function() {
       const wallet = document.getElementById('distributorWallet').value;
       if (!wallet) return;
-      
       try {
         const response = await fetch(`/api/users/find-by-wallet?wallet=${encodeURIComponent(wallet)}&role=distributor`);
         const data = await response.json();
@@ -591,7 +611,6 @@
     document.getElementById('findFinalRecipientByWalletBtn').addEventListener('click', async function() {
       const wallet = document.getElementById('finalRecipientWallet').value;
       if (!wallet) return;
-      
       try {
         const response = await fetch(`/api/users/find-by-wallet?wallet=${encodeURIComponent(wallet)}&role=retailer`);
         const data = await response.json();
@@ -612,7 +631,7 @@
     });
   });
 </script>
-
+    
 <style>
   .timeline {
     position: relative;
@@ -620,7 +639,6 @@
     padding-left: 1.5rem;
     margin-left: 1rem;
   }
-
   .timeline:before {
     content: ' ';
     background: #dee2e6;
@@ -630,11 +648,9 @@
     width: 2px;
     height: 100%;
   }
-
   .timeline-item {
     position: relative;
   }
-
   .timeline-item:before {
     content: ' ';
     background: white;
@@ -649,3 +665,6 @@
     z-index: 1;
   }
 </style>
+
+<!-- Xóa phần hiển thị nút tạo mã QR ở cuối trang và thay thế bằng div trống -->
+<div class="mt-4"></div>

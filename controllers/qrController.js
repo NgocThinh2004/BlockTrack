@@ -1,5 +1,6 @@
 const QRCode = require('../models/qrCodeModel');
 const Product = require('../models/productModel');
+const ProductStage = require('../models/stageModel');
 
 /**
  * Controller xử lý các chức năng liên quan đến QR code
@@ -12,12 +13,41 @@ exports.generateQR = async (req, res, next) => {
     const product = await Product.getProductById(productId);
     
     if (!product) {
-      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+      return res.status(404).render('error', { 
+        title: 'Lỗi',
+        message: 'Không tìm thấy sản phẩm' 
+      });
     }
     
     // Chỉ chủ sở hữu mới có thể tạo mã QR
     if (product.ownerId !== req.session.userId) {
-      return res.status(403).render('error', { message: 'Bạn không có quyền tạo mã QR cho sản phẩm này' });
+      return res.status(403).render('error', { 
+        title: 'Lỗi quyền truy cập',
+        message: 'Bạn không có quyền tạo mã QR cho sản phẩm này' 
+      });
+    }
+    
+    // Kiểm tra sản phẩm đã có mã QR chưa
+    const existingQR = await QRCode.getQRCodeByProductId(productId);
+    if (existingQR) {
+      return res.redirect(`/qr/${productId}/view`);
+    }
+    
+    // Kiểm tra sản phẩm đã qua giai đoạn đóng gói chưa
+    const stages = await ProductStage.getStagesByProductId(productId);
+    const hasPackagingStage = stages.some(stage => stage.stageName === 'packaging');
+    
+    if (!hasPackagingStage) {
+      return res.status(400).render('error', { 
+        title: 'Lỗi quy trình',
+        message: 'Sản phẩm phải được đóng gói (packaging) trước khi tạo mã QR. Vui lòng thêm giai đoạn đóng gói trước.',
+        error: {
+          status: 400,
+          stack: process.env.NODE_ENV === 'development' 
+            ? 'Quy trình: production -> packaging -> QR -> distribution -> retail -> sold'
+            : ''
+        }
+      });
     }
     
     const qrCode = await QRCode.generateQRCode(productId);

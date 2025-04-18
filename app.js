@@ -53,6 +53,14 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
+// Thêm middleware xử lý biến views trước khi sử dụng các route
+const viewVariables = require('./middlewares/viewVariables');
+app.use(viewVariables);
+
+// Thêm middleware biến mặc định
+const defaultVariables = require('./middlewares/defaultVariables');
+app.use(defaultVariables);
+
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 

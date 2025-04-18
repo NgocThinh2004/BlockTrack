@@ -29,25 +29,26 @@ exports.showAddStageForm = async (req, res, next) => {
       return res.status(403).render('error', { message: 'Bạn không có quyền thêm giai đoạn cho sản phẩm này' });
     }
     
-    // Kiểm tra quyền theo vai trò
+    // Sửa đổi: Logic kiểm tra vai trò và giai đoạn mở rộng hơn
     let canAddStage = false;
     
-    if (req.user.role === 'producer' && 
-        ['production', 'packaging'].includes(product.currentStage)) {
-      canAddStage = true;
+    // Nếu là chủ sở hữu, mở rộng quyền thêm giai đoạn
+    if (req.user.role === 'producer') {
+      // Nhà sản xuất có thể thêm giai đoạn cho hầu hết các trạng thái
+      canAddStage = ['production', 'packaging', 'qr_generated', 'distribution'].includes(product.currentStage);
     } 
-    else if (req.user.role === 'distributor' && 
-             product.currentStage === 'packaging') {
-      canAddStage = true;
+    else if (req.user.role === 'distributor') {
+      // Nhà phân phối có thể thêm giai đoạn cho sản phẩm trong quá trình vận chuyển
+      canAddStage = ['packaging', 'qr_generated', 'distribution'].includes(product.currentStage);
     }
-    else if (req.user.role === 'retailer' && 
-             ['distribution', 'retail'].includes(product.currentStage)) {
-      canAddStage = true;
+    else if (req.user.role === 'retailer') {
+      // Nhà bán lẻ có thể thêm giai đoạn cho sản phẩm đã nhận hoặc chuẩn bị bán
+      canAddStage = ['distribution', 'retail', 'qr_generated'].includes(product.currentStage);
     }
     
     if (!canAddStage) {
       return res.status(403).render('error', { 
-        message: 'Vai trò của bạn không được phép thêm giai đoạn này' 
+        message: 'Sản phẩm ở trạng thái hiện tại không thể thêm giai đoạn mới. Vui lòng liên hệ quản trị viên nếu cần hỗ trợ.' 
       });
     }
     

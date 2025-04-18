@@ -97,11 +97,17 @@ exports.getProduct = async (req, res, next) => {
     // Lấy mã QR nếu có
     const qrCode = await QRCode.getQRCodeByProductId(productId);
     
+    // Kiểm tra xem sản phẩm đã qua giai đoạn đóng gói chưa
+    const hasPackagingStage = stages.some(stage => stage.stageName === 'packaging');
+    
     res.render('products/show', {
       title: product.name,
       product,
       history: stages || [],
-      qrCode
+      qrCode,
+      canCreateQR: hasPackagingStage && !qrCode && product.ownerId === req.session.userId,
+      needsPackaging: !hasPackagingStage && product.ownerId === req.session.userId,
+      isOwner: req.session.userId === product.ownerId
     });
   } catch (error) {
     next(error);
