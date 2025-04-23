@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  // ...existing code...
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <!-- Header với width 100% và không có padding -->
+  <%- include('./partials/header') %>
+  
+  <!-- Content container vẫn giữ padding để nội dung có khoảng cách -->
+  <main class="flex-grow-1 content-container">
+    <!-- Flash Messages -->
+    <% if (typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i><%= success_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+    
+    <% if (typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i><%= error_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+    
+    <% if (typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+      <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i><%= warning_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+    
+    <% if (typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i><%= info_msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% } %>
+    
+    <%- body %>
+  </main>
+  
+  <!-- Footer cũng có thể dạt ra sát lề nếu cần -->
+  <%- include('./partials/footer') %>
+  
+  <!-- Scripts -->
+  // ...existing code...
+</body>
+</html>

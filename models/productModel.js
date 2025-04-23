@@ -843,6 +843,87 @@ class Product {
       return false;
     }
   }
+
+  /**
+   * Lấy danh sách sản phẩm theo nhà phân phối và trạng thái
+   * @param {string} distributorId - ID của nhà phân phối
+   * @param {string} status - Trạng thái sản phẩm ('in_progress' hoặc 'delivered')
+   * @returns {Promise<Array>} Danh sách sản phẩm
+   */
+  static async getProductsByDistributor(distributorId, status) {
+    try {
+      console.log(`Lấy sản phẩm cho nhà phân phối ${distributorId} với trạng thái ${status}`);
+      
+      // Lấy sản phẩm mà nhà phân phối hiện đang sở hữu
+      const ownedProducts = await firebase.firestore()
+        .collection('products')
+        .where('ownerId', '==', distributorId)
+        .get();
+        
+      // Lấy sản phẩm mà nhà phân phối đã giao xong
+      const deliveredProducts = await firebase.firestore()
+        .collection('products')
+        .where('deliveredBy', '==', distributorId)
+        .get();
+        
+      const results = [];
+      
+      // Xử lý sản phẩm dựa trên trạng thái
+      if (status === 'in_progress') {
+        // Chỉ trả về sản phẩm mà nhà phân phối đang sở hữu và có người nhận cuối
+        ownedProducts.forEach(doc => {
+          const data = doc.data();
+          if (data.finalRecipientId) {
+            results.push({
+              id: doc.id,
+              ...data
+            });
+          }
+        });
+      } else if (status === 'delivered') {
+        // Trả về sản phẩm mà nhà phân phối đã giao xong
+        deliveredProducts.forEach(doc => {
+          results.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Lỗi khi lấy sản phẩm theo nhà phân phối:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Lấy sản phẩm với điều kiện tùy chỉnh
+   * @param {string} field - Tên trường
+   * @param {string} operator - Toán tử so sánh
+   * @param {any} value - Giá trị so sánh
+   * @returns {Promise<Array>} - Danh sách sản phẩm
+   */
+  static async getProductsWithCondition(field, operator, value) {
+    try {
+      const snapshot = await firebase.firestore()
+        .collection('products')
+        .where(field, operator, value)
+        .get();
+        
+      if (snapshot.empty) {
+        return [];
+      }
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error(`Lỗi khi lấy sản phẩm với điều kiện ${field} ${operator} ${value}:`, error);
+      return [];
+    }
+  }
 }
 
 module.exports = Product;

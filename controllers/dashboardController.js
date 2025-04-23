@@ -107,60 +107,64 @@ exports.getProducerDashboard = async (req, res, next) => {
   }
 };
 
-// Tương tự cập nhật cho getDistributorDashboard và getRetailerDashboard
+/**
+ * Hiển thị dashboard cho nhà phân phối
+ */
 exports.getDistributorDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
-    console.log('Distributor dashboard requested by userId:', userId);
-    const user = await User.getUserById(userId);
+    let inProgressProducts = [];
+    let deliveredProducts = [];
     
-    if (!user || user.role !== 'distributor') {
-      console.log('Access denied: User is not a distributor');
-      return res.status(403).redirect('/auth/login');
+    // Lấy danh sách sản phẩm cho nhà phân phối
+    try {
+      if (typeof Product.getProductsByDistributor === 'function') {
+        // Sử dụng phương thức chuyên biệt nếu có
+        inProgressProducts = await Product.getProductsByDistributor(userId, 'in_progress');
+        deliveredProducts = await Product.getProductsByDistributor(userId, 'delivered');
+      } else {
+        // Fallback: Sử dụng phương thức chung
+        console.log('Phương thức getProductsByDistributor không tồn tại, sử dụng phương thức thay thế');
+        
+        // Lấy sản phẩm đang vận chuyển (nhà phân phối đang sở hữu)
+        inProgressProducts = await Product.getProductsByOwner(userId);
+        
+        // Lọc sản phẩm để chỉ lấy các sản phẩm đang trong quá trình vận chuyển
+        inProgressProducts = inProgressProducts.filter(p => p.finalRecipientId);
+        
+        // Lấy sản phẩm đã giao (nhà phân phối đã chuyển quyền sở hữu)
+        deliveredProducts = await Product.getProductsWithCondition(
+          'deliveredBy', 
+          '==', 
+          userId
+        );
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy sản phẩm cho dashboard:', error);
+      inProgressProducts = [];
+      deliveredProducts = [];
     }
     
-    // Lấy sản phẩm từ database - kết hợp cả hiện tại và đã chuyển
-    const currentProducts = await Product.getProductsByOwner(userId);
-    const transferredProducts = await Product.getProductsTransferredBy(userId);
+    // Lấy hoạt động gần đây
+    const activities = await Activity.getActivitiesByUser(userId, 10);
     
-    // Kết hợp sản phẩm
-    const productMap = new Map();
-    transferredProducts.forEach(product => {
-      productMap.set(product.id, product);
-    });
-    currentProducts.forEach(product => {
-      productMap.set(product.id, product);
-    });
-    const products = Array.from(productMap.values());
-    
-    // Sắp xếp theo thời gian tạo giảm dần
-    products.sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-      return dateB - dateA;
-    });
-    
-    // Đếm số lượng sản phẩm theo giai đoạn - chỉ đếm sản phẩm hiện tại
-    const productsByStage = {
-      inTransit: currentProducts.filter(p => p.currentStage === 'distribution').length,
-      qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
-      delivered: currentProducts.filter(p => !['distribution', 'in_transit', 'qr_generated'].includes(p.currentStage)).length
+    // Tính toán các số liệu thống kê
+    const stats = {
+      inProgressCount: inProgressProducts.length,
+      deliveredCount: deliveredProducts.length,
+      producerCount: 0,
+      totalScans: 0
     };
     
-    console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
-
-    // Lấy chính xác 5 hoạt động gần đây
-    const activities = await Activity.getActivitiesByUser(userId, 5);
-    console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for distributor dashboard`);
-    
-    res.render('dashboard/distributor', { 
-      user,
-      products,
-      productsByStage,
-      productsCount: currentProducts.length,
-      activities: activities || [],
-      title: 'Nhà phân phối Dashboard'
+    // Render trang dashboard với dữ liệu đã chuẩn bị
+    res.render('dashboard/distributor', {
+      title: 'Dashboard Nhà phân phối',
+      inProgressProducts,
+      deliveredProducts,
+      activities,
+      stats
     });
+    
   } catch (error) {
     console.error('Error in distributor dashboard:', error);
     next(error);

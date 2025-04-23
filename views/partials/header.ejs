@@ -1,0 +1,55 @@
+<header class="w-100">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container-fluid">
+      <!-- Logo không có spacing -->
+      <a class="navbar-brand" href="/">
+        <i class="fas fa-cubes"></i>BlockTrack
+      </a>
+      
+      <!-- Toggle button sát lề phải khi ở mobile -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <!-- Menu items sát nhau -->
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Trang chủ</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= currentPath.startsWith('/track') ? 'active' : '' %>" href="/track">Truy xuất</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= currentPath.startsWith('/products') ? 'active' : '' %>" href="/products">Sản phẩm</a>
+          </li>
+        </ul>
+
+        <!-- Auth buttons sát lề phải -->
+        <div class="ms-auto">
+          <% if (user) { %>
+            <div class="dropdown">
+              <button class="btn btn-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="user-avatar">
+                  <i class="fas fa-user"></i>
+                </div>
+                <%= user.name %>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <!-- ...existing code... -->
+              </ul>
+            </div>
+          <% } else { %>
+            <a href="/auth/login" class="btn btn-outline-light">
+              <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+            <a href="/auth/register" class="btn btn-light">
+              <i class="fas fa-user-plus"></i> Đăng ký
+            </a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
