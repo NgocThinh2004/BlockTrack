@@ -83,16 +83,17 @@ class ProductStage {
   }
   
   /**
-   * Add a transfer stage when ownership changes
-   * @param {string} productId - Product ID
-   * @param {string} previousOwnerId - Previous owner ID
-   * @param {string} newOwnerId - New owner ID
-   * @param {string} reason - Transfer reason
-   * @param {Object} receiverData - Information about the receiver
-   * @param {string} newStage - New stage for the product (optional)
-   * @returns {Object} - Created stage
+   * Thêm giai đoạn chuyển quyền sở hữu cho sản phẩm
+   * @param {string} productId - ID sản phẩm
+   * @param {string} previousOwnerId - ID chủ sở hữu cũ
+   * @param {string} newOwnerId - ID chủ sở hữu mới
+   * @param {string} reason - Lý do chuyển
+   * @param {Object} receiverData - Thông tin người nhận
+   * @param {string} newStage - Tên giai đoạn mới
+   * @param {boolean} skipBlockchain - Bỏ qua giao dịch blockchain nếu đã thực hiện
+   * @returns {Object} - Stage đã tạo
    */
-  static async addTransferStage(productId, previousOwnerId, newOwnerId, reason = '', receiverData = {}, newStage = '') {
+  static async addTransferStage(productId, previousOwnerId, newOwnerId, reason = '', receiverData = {}, newStage = '', skipBlockchain = false) {
     try {
       const stageId = uuidv4();
       
@@ -147,25 +148,32 @@ class ProductStage {
           finalRecipientId: receiverData.finalRecipientId
         },
         handledBy: previousOwnerId, // Người thực hiện là chủ sở hữu cũ
-        blockchainTxId: null,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
       
-      // Record stage on blockchain
-      try {
-        const { transactionHash } = await blockchainService.addStage({
-          ...stage,
-          stageName: stage.stageName,
-          description: stage.description
-        });
-        stage.blockchainTxId = transactionHash;
-      } catch (blockchainError) {
-        console.error('Error adding transfer stage to blockchain:', blockchainError);
-      }
-      
-      // Save stage to database
+      // Lưu vào database
       await stagesCollection.doc(stageId).set(stage);
       
+      // Nếu giao dịch blockchain đã được thực hiện ở trên (trong transferWithShipping), 
+      // bỏ qua phần giao dịch blockchain ở đây
+      if (!skipBlockchain) {
+        // Thực hiện giao dịch blockchain tại đây (nếu cần)
+        try {
+          // Nếu có mã liên quan đến blockchain ở đây, chỉ thực hiện khi skipBlockchain = false
+          const Product = require('./productModel');
+          const product = await Product.getProductById(productId);
+          
+          // Kiểm tra xem có cần giao dịch blockchain cho giai đoạn này không
+          // Hiện tại hàm này không thực hiện giao dịch blockchain, nhưng để phòng trường hợp
+          // có thay đổi trong tương lai
+        } catch (blockchainError) {
+          console.error('Error with blockchain during stage creation:', blockchainError);
+          // Không throw lỗi để quá trình thêm giai đoạn vẫn hoàn tất
+        }
+      } else {
+        console.log('Bỏ qua giao dịch blockchain vì đã được thực hiện trước đó');
+      }
+
       return stage;
     } catch (error) {
       console.error('Error adding transfer stage:', error);

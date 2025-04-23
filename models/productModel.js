@@ -647,6 +647,13 @@ class Product {
       if (!product) {
         throw new Error('Product not found');
       }
+      
+      // Kiểm tra nếu đã được chuyển trước đó
+      if (product.currentStage === 'distribution' && product.ownerId === distributorId) {
+        console.log('Sản phẩm đã được chuyển cho nhà phân phối trên blockchain, bỏ qua giao dịch');
+        return true;
+      }
+      
       // Lưu thông tin chủ sở hữu cũ
       const previousOwnerId = product.ownerId;
       // Chuẩn bị dữ liệu nhà phân phối
@@ -696,7 +703,8 @@ class Product {
           distributorId, 
           transferReason, 
           receiverData, 
-          'distribution'
+          'distribution',
+          true // Thêm tham số mới để chỉ ra rằng giao dịch blockchain đã được thực hiện
         );
       } catch (stageError) {
         console.error('Error adding transfer stage:', stageError);
