@@ -173,6 +173,14 @@
                             <span class="badge bg-warning-subtle text-warning me-2 px-3 py-2 rounded-pill">
                               <i class="fas fa-truck me-1"></i> Đang phân phối
                             </span>
+                            <% if (product.ownerId !== locals.user.id) { %>
+                              <small class="text-muted">(Đã chuyển)</small>
+                            <% } %>
+                          <% } else if (product.currentStage === 'retail') { %>
+                            <span class="badge bg-success-subtle text-success me-2 px-3 py-2 rounded-pill">
+                              <i class="fas fa-store me-1"></i> Tại cửa hàng
+                            </span>
+                            <small class="text-muted">(Đã chuyển)</small>
                           <% } else { %>
                             <span class="badge bg-secondary-subtle text-secondary me-2 px-3 py-2 rounded-pill">
                               <i class="fas fa-question-circle me-1"></i> <%= product.currentStage %>

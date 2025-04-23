@@ -120,8 +120,8 @@ class ProductStage {
       
       // Xác định địa chỉ dựa vào thông tin người nhận
       let location = 'N/A';
-      if (newStage === 'distribution' && receiverData.receiverAddress) {
-        location = receiverData.receiverAddress;
+      if (actualStageName === 'distribution' && receiverData.pickupLocation) {
+        location = receiverData.pickupLocation;
       } else if (receiverData.receiverLocation) {
         location = receiverData.receiverLocation;
       }
@@ -131,10 +131,21 @@ class ProductStage {
         id: stageId,
         productId: productId,
         stageName: actualStageName,
-        description: description,
+        description: actualStageName === 'distribution' 
+          ? `Sản phẩm đã được chuyển cho đơn vị vận chuyển ${receiverData.receiverName || 'không xác định'}. Đang chờ đơn vị vận chuyển lấy hàng.` 
+          : description,
         location: location,
         previousOwnerId: previousOwnerId,
         newOwnerId: newOwnerId,
+        reason: reason || 'Không có lý do',
+        details: {
+          receiverName: receiverData.receiverName,
+          receiverRole: receiverData.receiverRole,
+          receiverLocation: receiverData.receiverLocation,
+          pickupLocation: receiverData.pickupLocation,
+          finalRecipientName: receiverData.finalRecipientName,
+          finalRecipientId: receiverData.finalRecipientId
+        },
         handledBy: previousOwnerId, // Người thực hiện là chủ sở hữu cũ
         blockchainTxId: null,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -145,7 +156,7 @@ class ProductStage {
         const { transactionHash } = await blockchainService.addStage({
           ...stage,
           stageName: stage.stageName,
-          description: description
+          description: stage.description
         });
         stage.blockchainTxId = transactionHash;
       } catch (blockchainError) {

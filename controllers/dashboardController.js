@@ -29,10 +29,16 @@ exports.getProducerDashboard = async (req, res, next) => {
     
     // Lấy sản phẩm từ database
     const currentProducts = await Product.getProductsByOwner(userId);
+    const createdProducts = await Product.getProductsByCreator(userId); // Thêm lấy sản phẩm dựa trên creatorId
     const transferredProducts = await Product.getProductsTransferredBy(userId);
     
     // Kết hợp cả sản phẩm hiện tại và sản phẩm đã chuyển quyền sở hữu
     const productMap = new Map();
+    
+    // Thêm sản phẩm đã tạo vào map
+    createdProducts.forEach(product => {
+      productMap.set(product.id, product);
+    });
     
     // Thêm sản phẩm đã chuyển giao vào map
     transferredProducts.forEach(product => {

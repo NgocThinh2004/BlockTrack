@@ -654,9 +654,11 @@ class Product {
         receiverName: additionalData.distributorName || 'Đơn vị vận chuyển',
         receiverRole: 'distributor',
         receiverLocation: additionalData.location || 'N/A',
+        pickupLocation: additionalData.pickupLocation || 'N/A',
         finalRecipientId: finalRecipientId,
         finalRecipientName: additionalData.finalRecipientName || 'Nhà bán lẻ'
       };
+      
       // Record the transfer on blockchain
       let blockchainResult = null;
       try {
@@ -668,18 +670,23 @@ class Product {
       } catch (blockchainError) {
         console.error('Error transferring product on blockchain:', blockchainError);
       }
-      // Update in database
+      
+      // Update in database - Giữ trường creatorId khi cập nhật
       const updateData = {
         ownerId: distributorId,
         currentStage: 'distribution',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        finalRecipientId: finalRecipientId // Lưu thông tin người nhận cuối
+        finalRecipientId: finalRecipientId, // Lưu thông tin người nhận cuối
+        previousOwnerId: previousOwnerId // Lưu trữ thông tin về chủ sở hữu trước đó
       };
+      
       // Add blockchain transaction hash if available
       if (blockchainResult && blockchainResult.transactionHash) {
         updateData.blockchainTxId = blockchainResult.transactionHash;
       }
+      
       await productsCollection.doc(productId).update(updateData);
+      
       // Thêm giai đoạn chuyển quyền sở hữu vào lịch sử sản phẩm
       try {
         const ProductStage = require('./stageModel');
@@ -694,6 +701,7 @@ class Product {
       } catch (stageError) {
         console.error('Error adding transfer stage:', stageError);
       }
+      
       // Ghi nhật ký hoạt động cho người chuyển
       await Activity.addActivity({
         userId: previousOwnerId,
@@ -924,6 +932,54 @@ class Product {
       return [];
     }
   }
+
+  /**
+   * Get products by creator ID (who initially created the products)
+   * @param {string} creatorId - Creator's user ID
+   * @returns {Array} - List of products
+   */
+  static async getProductsByCreator(creatorId) {
+    try {
+      let snapshot;
+      let usingSortedQuery = true;
+      try {
+        // Truy vấn có sắp xếp (cần index)
+        snapshot = await productsCollection
+          .where('creatorId', '==', creatorId)
+          .orderBy('createdAt', 'desc')
+          .get();
+      } catch (error) {
+        // Nếu lỗi index, sử dụng truy vấn đơn giản
+        if (error.code === 'failed-precondition') {
+          console.warn('Firestore index not yet created, falling back to non-sorted query');
+          snapshot = await productsCollection
+            .where('creatorId', '==', creatorId)
+            .get();
+          usingSortedQuery = false;
+        } else {
+          throw error; // Re-throw nếu không phải lỗi index
+        }
+      }
+      
+      const products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      // Nếu sử dụng truy vấn không sắp xếp, sắp xếp kết quả trong bộ nhớ
+      if (!usingSortedQuery) {
+        products.sort((a, b) => {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        });
+      }
+      
+      return products;
+    } catch (error) {
+      console.error('Error getting products by creator:', error);
+      return [];
+    }
+  }
+
 }
 
 module.exports = Product;

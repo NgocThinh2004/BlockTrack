@@ -357,7 +357,7 @@ exports.transferOwnership = async (req, res, next) => {
       transferType, recipientType, recipientEmail, recipientWallet, 
       distributorType, distributorEmail, distributorWallet, distributorId,
       finalRecipientType, finalRecipientEmail, finalRecipientWallet, finalRecipientId,
-      transferReason, otherReason, location
+      transferReason, otherReason, location, pickupLocation
     } = req.body;
     
     console.log('Transfer request:', req.body);
@@ -495,6 +495,7 @@ exports.transferOwnership = async (req, res, next) => {
         reason,
         { 
           location: location || 'N/A',
+          pickupLocation: pickupLocation || 'N/A',
           distributorName: distributor.name,
           finalRecipientName: finalRecipient.name
         }

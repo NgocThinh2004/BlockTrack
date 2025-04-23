@@ -7,9 +7,19 @@
       </h3>
     </div>
     <div class="card-body">
-      <div class="alert alert-success">
-        <i class="fas fa-check-circle me-2"></i> Sản phẩm này đã được xác thực trên blockchain
-      </div>
+      <% if (product.blockchainId && product.blockchainId !== 'Đang xử lý') { %>
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle me-2"></i> Sản phẩm này đã được xác thực trên blockchain
+        </div>
+      <% } else if (product.blockchainId === 'Đang xử lý') { %>
+        <div class="alert alert-info">
+          <i class="fas fa-sync fa-spin me-2"></i> Sản phẩm đang chờ được xác thực trên blockchain
+        </div>
+      <% } else { %>
+        <div class="alert alert-secondary">
+          <i class="fas fa-info-circle me-2"></i> Sản phẩm chưa được đưa lên blockchain
+        </div>
+      <% } %>
       
       <div class="row mb-4">
         <div class="col-md-6">
@@ -109,7 +119,7 @@
                 <% if (qrCode) { %>
                   <img src="<%= qrCode.qrImageUrl %>" alt="QR Code" class="img-fluid" style="max-width: 150px;">
                 <% } else { %>
-                  <div class="bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;">
+                  <div class="bg-light d-flex align-items-center justify-content-center" style="width: 150px; height: 150px;"></div>
                     <i class="fas fa-qrcode fa-3x text-muted"></i>
                   </div>
                 <% } %>
@@ -223,56 +233,128 @@
       <% } %>
       
       <h5 class="mb-3">Hành trình sản phẩm</h5>
+      
       <div class="product-journey mb-4">
+        <% 
+        // Định nghĩa các helper functions cho timeline
+        function _getStageIcon(stageName) {
+          switch (stageName) {
+            case 'production': return 'fas fa-cogs';
+            case 'packaging': return 'fas fa-box';
+            case 'qr_generated': return 'fas fa-qrcode';
+            case 'distribution': return 'fas fa-truck';
+            case 'retail': return 'fas fa-store';
+            case 'sold': return 'fas fa-shopping-cart';
+            case 'ownership_transfer': return 'fas fa-exchange-alt';
+            default: return 'fas fa-circle';
+          }
+        }
+
+        function _formatStageName(stageName) {
+          switch (stageName) {
+            case 'production': return 'Sản xuất';
+            case 'packaging': return 'Đóng gói';
+            case 'qr_generated': return 'Tạo mã QR';
+            case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
+            case 'retail': return 'Đến nhà bán lẻ';
+            case 'sold': return 'Đã bán';
+            case 'ownership_transfer': return 'Chuyển quyền sở hữu';
+            default: return stageName;
+          }
+        }
+
+        function _formatTimestamp(timestamp) {
+          if (!timestamp) return 'Không có thông tin';
+          
+          try {
+            if (typeof timestamp.toDate === 'function') {
+              return timestamp.toDate().toLocaleString('vi-VN');
+            } else if (timestamp instanceof Date) {
+              return timestamp.toLocaleString('vi-VN');
+            } else {
+              return new Date(timestamp).toLocaleString('vi-VN');
+            }
+          } catch (e) {
+            return 'Không có thông tin';
+          }
+        }
+
+        // Sử dụng helper functions được truyền từ controller nếu có, không thì dùng functions đã định nghĩa
+        var getStageIcon = typeof getStageIcon !== 'undefined' ? getStageIcon : _getStageIcon;
+        var formatStageName = typeof formatStageName !== 'undefined' ? formatStageName : _formatStageName;
+        var formatTimestamp = typeof formatTimestamp !== 'undefined' ? formatTimestamp : _formatTimestamp;
+        %>
+
         <div class="timeline">
           <% if (history && history.length > 0) { %>
-            <% history.forEach((stage, index) => { %>
+            <% history.forEach((item, index) => { %>
               <div class="timeline-item">
                 <div class="timeline-dot <%= 
-                  stage.stageName === 'production' ? 'bg-primary' : 
-                  stage.stageName === 'packaging' ? 'bg-info' : 
-                  stage.stageName === 'distribution' ? 'bg-warning' : 
-                  stage.stageName === 'retail' ? 'bg-success' : 
-                  stage.stageName === 'qr_generated' ? 'bg-info' :
+                  item.stageName === 'production' ? 'bg-primary' : 
+                  item.stageName === 'packaging' ? 'bg-info' : 
+                  item.stageName === 'distribution' ? 'bg-warning' : 
+                  item.stageName === 'retail' ? 'bg-success' : 
+                  item.stageName === 'qr_generated' ? 'bg-info' :
                   'bg-secondary' 
                 %>"></div>
                 <div class="timeline-content">
                   <div class="d-flex justify-content-between mb-1">
                     <h6 class="<%= index === 0 ? 'text-primary fw-bold' : '' %>">
-                      <% if (stage.stageName === 'qr_generated') { %>
+                      <% if (item.stageName === 'qr_generated') { %>
                         <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+                      <% } else if (item.stageName === 'distribution') { %>
+                        <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
+                      <% } else if (item.stageName === 'retail') { %>
+                        <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+                      <% } else if (item.stageName === 'ownership_transfer') { %>
+                        <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
                       <% } else { %>
-                        <%= stage.stageName.charAt(0).toUpperCase() + stage.stageName.slice(1) %>
+                        <%= item.stageName.charAt(0).toUpperCase() + item.stageName.slice(1) %>
                       <% } %>
                     </h6>
-                    <p><%= stage.description %></p>
-                    <div class="timeline-meta">
-                      <span><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></span>
-                      <span><i class="fas fa-calendar-alt me-1"></i> 
-                        <% 
-                          let stageTime = '';
-                          try {
-                            if (stage.timestamp) {
-                              // Kiểm tra nếu là timestamp từ Firebase
-                              if (stage.timestamp.toDate) {
-                                stageTime = stage.timestamp.toDate().toLocaleString('vi-VN');
-                              } 
-                              // Kiểm tra nếu là Date hoặc chuỗi ISO
-                              else if (!isNaN(new Date(stage.timestamp))) {
-                                stageTime = new Date(stage.timestamp).toLocaleString('vi-VN');
-                              }
+                    <span class="text-muted small">
+                      <% 
+                        let stageTime = '';
+                        try {
+                          if (item.timestamp) {
+                            // Kiểm tra nếu là timestamp từ Firebase
+                            if (item.timestamp.toDate) {
+                              stageTime = item.timestamp.toDate().toLocaleString('vi-VN');
+                            } 
+                            // Kiểm tra nếu là Date hoặc chuỗi ISO
+                            else if (!isNaN(new Date(item.timestamp))) {
+                              stageTime = new Date(item.timestamp).toLocaleString('vi-VN');
                             }
-                          %>
-                          <%= stageTime || 'Không có dữ liệu' %>
-                        <% } catch(e) { %>
-                          Không có dữ liệu
-                        <% } %>
-                      </span>
+                          }
+                        %>
+                        <%= stageTime || 'Không có dữ liệu' %>
+                      <% } catch(e) { %>
+                        Không có dữ liệu
+                      <% } %>
+                    </span>
+                  </div>
+                  <div class="timeline-event">
+                    <span class="timeline-event-icon"><i class="<%= getStageIcon(item.stageName) %>"></i></span>
+                    <div class="timeline-event-content">
+                      <h4 class="timeline-event-title"><%= formatStageName(item.stageName) %></h4>
+                      <p class="timeline-event-time"><i class="fas fa-clock me-1"></i> <%= formatTimestamp(item.timestamp) %></p>
+                      
+                      <% if (item.stageName === 'distribution' && item.details && item.details.pickupLocation) { %>
+                        <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> Địa điểm lấy hàng: <%= item.details.pickupLocation %></p>
+                      <% } else { %>
+                        <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= item.location %></p>
+                      <% } %>
+                      
+                      <p class="timeline-event-description"><%= item.description %></p>
+                      
+                      <% if (item.stageName === 'distribution' && item.details && item.details.finalRecipientName) { %>
+                        <p class="timeline-event-detail"><i class="fas fa-user me-1"></i> Người nhận cuối: <%= item.details.finalRecipientName %></p>
+                      <% } %>
                     </div>
                   </div>
                 </div>
               </div>
-            <% }) %>
+            <% }); %>
           <% } else { %>
             <div class="text-center text-muted py-4">
               <p>Không có dữ liệu lịch sử</p>
@@ -341,5 +423,40 @@
 
 .timeline-meta span {
   margin-right: 10px;
+}
+
+.timeline-event {
+  display: flex;
+  margin-top: 10px;
+}
+
+.timeline-event-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #e9ecef;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+.timeline-event-content {
+  flex: 1;
+}
+
+.timeline-event-title {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.timeline-event-time, 
+.timeline-event-location, 
+.timeline-event-description,
+.timeline-event-detail {
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #6c757d;
 }
 </style>
