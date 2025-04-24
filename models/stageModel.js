@@ -1,9 +1,9 @@
-const firebase = require('firebase/app');
-require('firebase/firestore');
+const firebase = require('../config/firebase');
 const { v4: uuidv4 } = require('uuid');
 const Product = require('./productModel');
 const blockchainService = require('../services/blockchainService');
 const Activity = require('./activityModel'); // Import Activity model
+const { getStageName } = require('../utils/productHelpers'); // Import getStageName
 
 // Reference to stages collection
 const stagesCollection = firebase.firestore().collection('productStages');
@@ -51,28 +51,40 @@ class ProductStage {
       const product = await Product.getProductById(stageData.productId);
       console.log(`Thêm hoạt động giai đoạn cho sản phẩm: ${product ? product.name : 'Unknown'}, userId: ${stageData.handledBy}`);
       
-      // Đảm bảo có userId hợp lệ
-      if (!stageData.handledBy) {
-        console.warn('Warning: Missing handledBy (userId) when adding stage activity');
-        if (product && product.ownerId) {
-          console.log('Using product ownerId as fallback for activity');
-          stageData.handledBy = product.ownerId;
-        }
+      // Lấy tên hiển thị cho stage name khi thêm vào mô tả
+      const displayStageName = getStageName(stageData.stageName);
+      
+      // Nếu không có mô tả được cung cấp, tạo mô tả mặc định
+      if (!stageData.description) {
+        stageData.description = `${product ? product.name : 'Sản phẩm'} chuyển sang giai đoạn ${displayStageName}`;
       }
       
-      try {
-        await Activity.addActivity({
-          userId: stageData.handledBy,
-          type: 'stage_added',
-          entityId: stage.id,
-          entityName: stage.stageName,
-          entityType: 'stage',
-          description: `${product ? product.name : 'Sản phẩm'} chuyển sang giai đoạn ${getStageName(stage.stageName)}`
-        });
-        console.log('Đã thêm activity thành công khi tạo stage mới');
-      } catch (activityError) {
-        console.error('Lỗi khi thêm activity cho stage:', activityError);
-        // Không throw error để tránh lỗi stage
+      // Kiểm tra cờ skipActivityCreation, nếu true thì bỏ qua việc tạo hoạt động
+      if (!stageData.skipActivityCreation) {
+        // Đảm bảo có userId hợp lệ
+        if (!stageData.handledBy) {
+          console.warn('Warning: Missing handledBy (userId) when adding stage activity');
+          if (product && product.ownerId) {
+            console.log('Using product ownerId as fallback for activity');
+            stageData.handledBy = product.ownerId;
+          }
+        }
+        
+        try {
+          await Activity.addActivity({
+            userId: stageData.handledBy,
+            type: 'stage_added',
+            entityId: stage.id,
+            entityName: stage.stageName,
+            entityType: 'stage',
+            description: `${product ? product.name : 'Sản phẩm'} chuyển sang giai đoạn ${getStageName(stage.stageName)}`
+          });
+          console.log('Đã thêm activity thành công khi tạo stage mới');
+        } catch (activityError) {
+          console.error('Lỗi khi thêm activity cho stage:', activityError);
+        }
+      } else {
+        console.log('Bỏ qua tạo hoạt động cho giai đoạn này theo yêu cầu');
       }
       
       return stage;
@@ -295,18 +307,6 @@ class ProductStage {
       throw error;
     }
   }
-}
-
-// Helper function to get stage name in Vietnamese
-function getStageName(stageName) {
-  const stageNames = {
-    'production': 'Sản xuất',
-    'packaging': 'Đóng gói',
-    'distribution': 'Vận chuyển',
-    'retail': 'Bán lẻ',
-    'sold': 'Đã bán'
-  };
-  return stageNames[stageName] || stageName;
 }
 
 module.exports = ProductStage;

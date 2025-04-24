@@ -71,7 +71,8 @@ class QRCode {
             stageName: 'qr_generated',
             description: 'Mã QR đã được tạo cho sản phẩm này',
             location: 'Hệ thống',
-            handledBy: product.ownerId
+            handledBy: product.ownerId,
+            skipActivityCreation: true // Thêm flag để không tạo hoạt động từ stage
           };
           
           // Thêm giai đoạn vào lịch sử sản phẩm và đưa lên blockchain

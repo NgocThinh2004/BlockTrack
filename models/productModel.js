@@ -684,6 +684,7 @@ class Product {
         currentStage: 'distribution',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         finalRecipientId: finalRecipientId, // Lưu thông tin người nhận cuối
+        finalRecipientName: additionalData.finalRecipientName || 'Nhà bán lẻ', // Thêm tên người nhận cuối vào document sản phẩm
         previousOwnerId: previousOwnerId // Lưu trữ thông tin về chủ sở hữu trước đó
       };
       
@@ -726,7 +727,7 @@ class Product {
         entityId: productId,
         entityName: product.name,
         entityType: 'product',
-        description: `Đã nhận sản phẩm "${product.name}" để vận chuyển đến ${receiverData.finalRecipientName}`
+        description: `Có một đơn hàng cần lấy từ ${product.manufacturer || 'nhà sản xuất'}`
       });
       // Thông báo cho người nhận cuối (nếu có)
       if (finalRecipientId) {
@@ -985,6 +986,64 @@ class Product {
     } catch (error) {
       console.error('Error getting products by creator:', error);
       return [];
+    }
+  }
+
+  /**
+   * Xác nhận nhà phân phối đã lấy hàng từ nhà sản xuất
+   * @param {string} productId - ID sản phẩm
+   * @param {string} distributorId - ID nhà phân phối
+   * @returns {boolean} - Success status
+   */
+  static async confirmPickup(productId, distributorId) {
+    try {
+      const product = await this.getProductById(productId);
+      if (!product) {
+        throw new Error('Product not found');
+      }
+      
+      // Kiểm tra quyền sở hữu
+      if (product.ownerId !== distributorId) {
+        throw new Error('Only the current owner can confirm pickup');
+      }
+      
+      // Cập nhật thông tin xác nhận lấy hàng
+      const updateData = {
+        pickupConfirmedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      
+      await productsCollection.doc(productId).update(updateData);
+      
+      // Thêm stage mới để theo dõi quá trình
+      try {
+        const ProductStage = require('./stageModel');
+        await ProductStage.addStage({
+          productId,
+          stageName: 'pickup_confirmed',
+          description: 'Nhà phân phối đã xác nhận lấy hàng',
+          location: product.pickupLocation || 'N/A',
+          handledBy: distributorId,
+          skipActivityCreation: true // Thêm flag để không tạo hoạt động từ stage
+        });
+      } catch (stageError) {
+        console.error('Error adding pickup confirmation stage:', stageError);
+      }
+      
+      // Ghi hoạt động
+      await Activity.addActivity({
+        userId: distributorId,
+        type: 'pickup_confirmed',
+        entityId: productId,
+        entityName: product.name,
+        entityType: 'product',
+        description: `Đã xác nhận lấy hàng "${product.name}" từ nhà sản xuất`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error confirming pickup:', error);
+      throw error;
     }
   }
 

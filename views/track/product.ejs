@@ -345,10 +345,8 @@
                         <% if (item.details.receiverLocation && item.details.receiverLocation !== 'N/A') { %>
                           <p class="timeline-event-location"><i class="fas fa-truck-loading me-1"></i> Địa điểm giao hàng: <%= item.details.receiverLocation %></p>
                         <% } %>
-                      <% } else { %>
-                        <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= item.location %></p>
                       <% } %>
-                      
+                      <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= item.location %></p>
                       <p class="timeline-event-description"><%= item.description %></p>
                       
                       <% if (item.stageName === 'distribution' && item.details && item.details.finalRecipientName) { %>
@@ -378,6 +376,113 @@
     </div>
   </div>
 </div>
+
+<div class="product-status mb-3">
+  <h5 class="mb-2">Trạng thái hiện tại:</h5>
+  <span class="badge <%= 
+    product.currentStage === 'production' ? 'bg-primary' : 
+    product.currentStage === 'packaging' ? 'bg-info' : 
+    product.currentStage === 'qr_generated' ? 'bg-secondary' : 
+    product.currentStage === 'distribution' ? 'bg-primary' : 
+    product.currentStage === 'pickup_confirmed' ? 'bg-success' : 
+    product.currentStage === 'retail' ? 'bg-warning' : 
+    product.currentStage === 'sold' ? 'bg-danger' : 'bg-secondary' 
+  %> p-2">
+    <% if (product.currentStage === 'production') { %>
+      <i class="fas fa-industry me-1"></i> Sản xuất
+    <% } else if (product.currentStage === 'packaging') { %>
+      <i class="fas fa-box me-1"></i> Đóng gói
+    <% } else if (product.currentStage === 'qr_generated') { %>
+      <i class="fas fa-qrcode me-1"></i> Đã tạo mã QR
+    <% } else if (product.currentStage === 'distribution') { %>
+      <i class="fas fa-truck me-1"></i> Đang phân phối
+    <% } else if (product.currentStage === 'pickup_confirmed') { %>
+      <i class="fas fa-check-circle me-1"></i> Lấy hàng thành công
+    <% } else if (product.currentStage === 'retail') { %>
+      <i class="fas fa-store me-1"></i> Đã đến nhà bán lẻ
+    <% } else if (product.currentStage === 'sold') { %>
+      <i class="fas fa-shopping-cart me-1"></i> Đã bán
+    <% } else { %>
+      <%= typeof helpers !== 'undefined' && typeof helpers.getStageName === 'function' ? helpers.getStageName(product.currentStage) : product.currentStage %>
+    <% } %>
+  </span>
+</div>
+
+<% history.forEach(function(stage) { %>
+  <div class="timeline-item">
+    <div class="timeline-dot bg-<%= 
+      stage.stageName === 'production' ? 'primary' : 
+      stage.stageName === 'packaging' ? 'info' : 
+      stage.stageName === 'qr_generated' ? 'secondary' : 
+      stage.stageName === 'distribution' ? 'primary' : 
+      stage.stageName === 'pickup_confirmed' ? 'success' : 
+      stage.stageName === 'retail' ? 'warning' : 
+      stage.stageName === 'sold' ? 'danger' : 'secondary' 
+    %>"></div>
+    <div class="timeline-content card">
+      <div class="card-header fw-bold d-flex align-items-center">
+        <% if (stage.stageName === 'pickup_confirmed') { %>
+          <span class="me-auto">Lấy hàng thành công</span>
+        <% } else { %>
+          <span class="me-auto">
+            <% 
+            function getStageName(stageName) {
+              switch(stageName) {
+                case 'production': return 'Sản xuất';
+                case 'packaging': return 'Đóng gói';
+                case 'qr_generated': return 'Tạo mã QR';
+                case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
+                case 'pickup_confirmed': return 'Lấy hàng thành công';
+                case 'retail': return 'Đã đến nhà bán lẻ';
+                case 'sold': return 'Đã bán';
+                case 'ownership_transfer': return 'Chuyển quyền sở hữu';
+                default: return stageName;
+              }
+            }
+            %>
+            <%= typeof helpers !== 'undefined' && typeof helpers.getStageName === 'function' ? helpers.getStageName(stage.stageName) : getStageName(stage.stageName) %>
+          </span>
+        <% } %>
+        <small class="text-muted">
+          <% 
+          function formatTimestamp(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+            return date.toLocaleString('vi-VN', {
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            });
+          }
+          %>
+          <%= typeof helpers !== 'undefined' && typeof helpers.formatTimestamp === 'function' ? helpers.formatTimestamp(stage.timestamp) : formatTimestamp(stage.timestamp) %>
+        </small>
+      </div>
+      <div class="card-body">
+        <!-- Kiểm tra chi tiết giai đoạn -->
+        <% if (stage.stageName === 'distribution' && stage.details && stage.details.pickupLocation) { %>
+          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> Địa điểm lấy hàng: <%= stage.details.pickupLocation %></p>
+          
+          <% if (stage.details.receiverLocation && stage.details.receiverLocation !== 'N/A') { %>
+            <p class="timeline-event-location"><i class="fas fa-truck-loading me-1"></i> Địa điểm giao hàng: <%= stage.details.receiverLocation %></p>
+          <% } %>
+        <% } else if (stage.stageName === 'pickup_confirmed') { %>
+          <p class="timeline-event-description">Nhà phân phối đã xác nhận lấy hàng thành công</p>
+          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
+        <% } else { %>
+          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
+        <% } %>
+        
+        <p class="timeline-event-description"><%= stage.description %></p>
+        
+        <% if (stage.stageName === 'distribution' && stage.details && stage.details.finalRecipientName) { %>
+          <p class="text-muted mt-2">
+            <i class="fas fa-user me-1"></i> Người nhận cuối: <%= stage.details.finalRecipientName %>
+          </p>
+        <% } %>
+      </div>
+    </div>
+  </div>
+<% }); %>
 
 <style>
 .timeline {

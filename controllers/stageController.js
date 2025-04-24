@@ -125,3 +125,41 @@ exports.getProductStages = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.getStagesByProduct = async (req, res, next) => {
+  try {
+    const productId = req.params.productId;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { message: 'Không tìm thấy sản phẩm' });
+    }
+    
+    const stages = await ProductStage.getStagesByProductId(productId);
+    
+    // Thêm helpers
+    const helpers = {
+      getStageName: function(stageName) {
+        switch(stageName) {
+          case 'production': return 'Sản xuất';
+          case 'packaging': return 'Đóng gói';
+          case 'qr_generated': return 'Tạo mã QR';
+          case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
+          case 'pickup_confirmed': return 'Lấy hàng thành công';
+          case 'retail': return 'Đã đến nhà bán lẻ';
+          case 'sold': return 'Đã bán';
+          default: return stageName;
+        }
+      }
+    };
+    
+    res.render('stages/index', { 
+      product, 
+      stages,
+      title: `Giai đoạn sản phẩm: ${product.name}`,
+      helpers
+    });
+  } catch (error) {
+    next(error);
+  }
+};

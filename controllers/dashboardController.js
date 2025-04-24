@@ -62,39 +62,53 @@ exports.getProducerDashboard = async (req, res, next) => {
     
     console.log(`[DASHBOARD] Found ${products.length} total products (${currentProducts.length} current, ${transferredProducts.length} transferred) for user ${userId}`);
     
-    // Đếm số lượng sản phẩm theo giai đoạn
+    // Đếm số lượng sản phẩm theo giai đoạn - cập nhật cách tính
     const productsByStage = {
-      production: currentProducts.filter(p => p.currentStage === 'production').length,
-      packaging: currentProducts.filter(p => p.currentStage === 'packaging').length,
-      qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
-      distribution: 0 // Sẽ được cập nhật bên dưới
+      production: products.filter(p => p.currentStage === 'production').length,
+      packaging: products.filter(p => p.currentStage === 'packaging').length,
+      qr_generated: products.filter(p => p.currentStage === 'qr_generated').length,
+      distribution: 0 // Khởi tạo giá trị
     };
     
-    // Phương pháp 1: Đếm trực tiếp từ các sản phẩm đã chuyển giao
-    const distributionProducts = transferredProducts.filter(p => p.currentStage === 'distribution');
-    productsByStage.distribution = distributionProducts.length;
+    // Tính số sản phẩm đang phân phối - bao gồm cả đã chuyển đi nhưng vẫn tính là "phân phối"
+    try {
+      // Lấy tất cả các giai đoạn phân phối và các sản phẩm đã chuyển cho nhà phân phối 
+      // nhưng được tạo bởi nhà sản xuất hiện tại
+      const stagesCollection = firebase.firestore().collection('productStages');
+      const distributionStagesSnapshot = await stagesCollection
+        .where('stageName', '==', 'distribution')
+        .get();
+      
+      if (!distributionStagesSnapshot.empty) {
+        // Lọc các sản phẩm thuộc về nhà sản xuất hiện tại
+        const distributionProducts = new Set();
+        
+        for (const doc of distributionStagesSnapshot.docs) {
+          const stageData = doc.data();
+          const product = await Product.getProductById(stageData.productId);
+          
+          // Nếu sản phẩm được tạo bởi nhà sản xuất hiện tại
+          if (product && product.creatorId === userId) {
+            distributionProducts.add(stageData.productId);
+          }
+        }
+        
+        // Cập nhật số lượng sản phẩm trong giai đoạn phân phối
+        productsByStage.distribution = distributionProducts.size;
+      }
+    } catch (error) {
+      console.error('Error counting distribution stages:', error);
+    }
+    
+    // Cập nhật tổng số sản phẩm - bao gồm cả các sản phẩm đang phân phối
+    const productsCount = productsByStage.production + 
+                          productsByStage.packaging + 
+                          productsByStage.qr_generated + 
+                          productsByStage.distribution;
+    
     console.log(`[DASHBOARD] Distribution products: ${productsByStage.distribution}`);
     console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
 
-    // Phương pháp 2: Kiểm tra từ bảng giai đoạn sản phẩm (nếu số lượng vẫn không chính xác)
-    if (productsByStage.distribution === 0) {
-      try {
-        // Truy vấn trực tiếp từ bảng productStages
-        const stagesCollection = firebase.firestore().collection('productStages');
-        const distributionStagesSnapshot = await stagesCollection
-          .where('previousOwnerId', '==', userId)
-          .where('stageName', '==', 'distribution')
-          .get();
-        
-        // Lấy số lượng các sản phẩm đã chuyển sang giai đoạn vận chuyển
-        const distributionStagesCount = distributionStagesSnapshot.empty ? 0 : distributionStagesSnapshot.size;
-        productsByStage.distribution = Math.max(productsByStage.distribution, distributionStagesCount);
-        console.log(`[DASHBOARD] Distribution stages count: ${distributionStagesCount}`);
-      } catch (error) {
-        console.error('Error counting distribution stages:', error);
-      }
-    }
-    
     // Lấy chính xác 5 hoạt động gần đây
     const activities = await Activity.getActivitiesByUser(userId, 5);
     console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for dashboard`);
@@ -103,7 +117,7 @@ exports.getProducerDashboard = async (req, res, next) => {
       user,
       products,
       productsByStage,
-      productsCount: productsByStage.production + productsByStage.packaging + productsByStage.qr_generated + productsByStage.distribution, // Cập nhật cách tính tổng sản phẩm bao gồm cả QR
+      productsCount: productsCount, // Cập nhật cách tính tổng sản phẩm bao gồm cả QR
       activities: activities || [], // Đảm bảo luôn có một mảng, tránh lỗi
       title: 'Nhà sản xuất Dashboard'
     });

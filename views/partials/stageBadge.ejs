@@ -1,0 +1,28 @@
+<!-- Hiển thị badge theo giai đoạn -->
+<span class="badge <%= 
+  stageName === 'production' ? 'bg-primary' : 
+  stageName === 'packaging' ? 'bg-info' : 
+  stageName === 'qr_generated' ? 'bg-secondary' : 
+  stageName === 'distribution' ? 'bg-primary' : 
+  stageName === 'pickup_confirmed' ? 'bg-success' : 
+  stageName === 'retail' ? 'bg-warning' : 
+  stageName === 'sold' ? 'bg-danger' : 'bg-secondary' 
+%> <%= additionalClasses || '' %>">
+  <% if (stageName === 'production') { %>
+    <i class="fas fa-industry me-1"></i> Sản xuất
+  <% } else if (stageName === 'packaging') { %>
+    <i class="fas fa-box me-1"></i> Đóng gói
+  <% } else if (stageName === 'qr_generated') { %>
+    <i class="fas fa-qrcode me-1"></i> Đã tạo mã QR
+  <% } else if (stageName === 'distribution') { %>
+    <i class="fas fa-truck me-1"></i> Đang phân phối
+  <% } else if (stageName === 'pickup_confirmed') { %>
+    <i class="fas fa-check-circle me-1"></i> Lấy hàng thành công
+  <% } else if (stageName === 'retail') { %>
+    <i class="fas fa-store me-1"></i> Đã đến nhà bán lẻ
+  <% } else if (stageName === 'sold') { %>
+    <i class="fas fa-shopping-cart me-1"></i> Đã bán
+  <% } else { %>
+    <%= stageName %>
+  <% } %>
+</span>

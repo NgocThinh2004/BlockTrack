@@ -114,6 +114,54 @@ exports.getProduct = async (req, res, next) => {
   }
 };
 
+exports.getProductById = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.getProductById(productId);
+    
+    if (!product) {
+      return res.status(404).render('error', { 
+        message: 'Không tìm thấy sản phẩm', 
+        error: { status: 404 } 
+      });
+    }
+    
+    // Lấy lịch sử giai đoạn sản phẩm
+    const stages = await ProductStage.getStagesByProductId(productId);
+    
+    // Lấy QR code nếu có
+    const qrCode = await QRCode.getQRCodeByProductId(productId);
+    
+    // Thêm helper function để format tên giai đoạn
+    const helpers = {
+      getStageName: function(stageName) {
+        switch(stageName) {
+          case 'production': return 'Sản xuất';
+          case 'packaging': return 'Đóng gói';
+          case 'qr_generated': return 'Tạo mã QR';
+          case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
+          case 'pickup_confirmed': return 'Lấy hàng thành công';
+          case 'retail': return 'Đã đến nhà bán lẻ';
+          case 'sold': return 'Đã bán';
+          case 'ownership_transfer': return 'Chuyển quyền sở hữu';
+          default: return stageName;
+        }
+      }
+    };
+    
+    // Đính kèm stages và helpers vào product để sử dụng trong view
+    product.stages = stages;
+    
+    res.render('products/show', { 
+      product, 
+      qrCode,
+      helpers
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Các phương thức khác đơn giản hóa
 exports.showCreateForm = (req, res) => {
   res.render('products/create', { title: 'Tạo sản phẩm mới' });
@@ -555,6 +603,39 @@ exports.completeDelivery = async (req, res, next) => {
   } catch (error) {
     console.error('Error completing delivery:', error);
     req.flash('error', 'Có lỗi xảy ra khi hoàn tất giao hàng');
+    return res.redirect('/dashboard');
+  }
+};
+
+/**
+ * Xử lý xác nhận lấy hàng từ nhà phân phối
+ */
+exports.confirmPickup = async (req, res, next) => {
+  try {
+    const { productId } = req.body;
+    const userId = req.session.userId;
+    
+    // Kiểm tra sản phẩm tồn tại
+    const product = await Product.getProductById(productId);
+    if (!product) {
+      req.flash('error', 'Không tìm thấy sản phẩm');
+      return res.redirect('/dashboard');
+    }
+    
+    // Kiểm tra quyền (phải là nhà phân phối đang sở hữu sản phẩm)
+    if (product.ownerId !== userId) {
+      req.flash('error', 'Bạn không có quyền thực hiện thao tác này');
+      return res.redirect('/dashboard');
+    }
+    
+    // Xác nhận lấy hàng
+    await Product.confirmPickup(productId, userId);
+    
+    req.flash('success', 'Đã xác nhận lấy hàng thành công');
+    return res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Error confirming pickup:', error);
+    req.flash('error', 'Đã xảy ra lỗi khi xác nhận lấy hàng');
     return res.redirect('/dashboard');
   }
 };

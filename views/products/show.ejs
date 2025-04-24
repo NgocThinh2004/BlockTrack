@@ -19,6 +19,13 @@
           %> fs-6">
             <%= product.currentStage %>
           </span>
+          <% if (product.currentStage === 'pickup_confirmed') { %>
+            <span class="badge bg-success">Đã lấy hàng thành công</span>
+          <% } else if (product.currentStage === 'distribution') { %>
+            <span class="badge bg-primary">Đang phân phối</span>
+          <% } else { %>
+            <!-- Các trạng thái khác -->
+          <% } %>
         </div>
         <div class="card-body">
           <div class="row mb-3">
@@ -136,12 +143,18 @@
               <% history.forEach((item, index) => { %>
                 <li class="timeline-item mb-5">
                   <h5 class="fw-bold">
-                    <% if (item.stageName === 'qr_generated') { %>
+                    <% if (item.stageName === 'production') { %>
+                      <i class="fas fa-industry me-2"></i> Sản xuất
+                    <% } else if (item.stageName === 'packaging') { %>
+                      <i class="fas fa-box me-2"></i> Đóng gói
+                    <% } else if (item.stageName === 'qr_generated') { %>
                       <i class="fas fa-qrcode me-2"></i> Tạo mã QR
                     <% } else if (item.stageName === 'distribution') { %>
                       <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
                     <% } else if (item.stageName === 'retail') { %>
                       <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+                    <% } else if (item.stageName === 'pickup_confirmed') { %>
+                      <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
                     <% } else if (item.stageName === 'ownership_transfer') { %>
                       <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
                     <% } else { %>
@@ -182,6 +195,58 @@
           <% } %>
         </div>
       </div>
+      
+      <!-- Timeline lịch sử sản phẩm -->
+      <% if (product && product.stages && product.stages.length > 0) { %>
+        <div class="timeline mt-4">
+          <% product.stages.forEach(function(stage) { %>
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <% if (stage.stageName === 'production') { %>
+                  <i class="fas fa-industry"></i>
+                <% } else if (stage.stageName === 'packaging') { %>
+                  <i class="fas fa-box"></i>
+                <% } else if (stage.stageName === 'qr_generated') { %>
+                  <i class="fas fa-qrcode"></i>
+                <% } else if (stage.stageName === 'distribution') { %>
+                  <i class="fas fa-truck"></i>
+                <% } else if (stage.stageName === 'pickup_confirmed') { %>
+                  <i class="fas fa-check-circle"></i>
+                <% } else if (stage.stageName === 'retail') { %>
+                  <i class="fas fa-store"></i>
+                <% } else if (stage.stageName === 'sold') { %>
+                  <i class="fas fa-shopping-cart"></i>
+                <% } else { %>
+                  <i class="fas fa-circle"></i>
+                <% } %>
+              </div>
+              <div class="timeline-content">
+                <h5 class="mb-1">
+                  <% if (stage.stageName === 'production') { %>
+                    <i class="fas fa-industry me-2"></i> Sản xuất
+                  <% } else if (stage.stageName === 'packaging') { %>
+                    <i class="fas fa-box me-2"></i> Đóng gói
+                  <% } else if (stage.stageName === 'qr_generated') { %>
+                    <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+                  <% } else if (stage.stageName === 'distribution') { %>
+                    <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
+                  <% } else if (stage.stageName === 'pickup_confirmed') { %>
+                    <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
+                  <% } else if (stage.stageName === 'retail') { %>
+                    <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+                  <% } else if (stage.stageName === 'ownership_transfer') { %>
+                    <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
+                  <% } else { %>
+                    <i class="fas fa-circle me-2"></i> <%= stage.stageName %>
+                  <% } %>
+                </h5>
+                
+                <!-- ... content của timeline ... -->
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
     </div>
     
     <div class="col-md-4">
@@ -655,3 +720,128 @@
 
 <!-- Xóa phần hiển thị nút tạo mã QR ở cuối trang và thay thế bằng div trống -->
 <div class="mt-4"></div>
+
+<!-- Chi tiết lịch sử sản phẩm -->
+<div class="timeline">
+  <% product.stages && product.stages.forEach(function(item) { %>
+    <div class="timeline-item">
+      <!-- Phần icon -->
+      <div class="timeline-icon bg-<%= 
+        item.stageName === 'production' ? 'primary' : 
+        item.stageName === 'packaging' ? 'info' : 
+        item.stageName === 'qr_generated' ? 'secondary' : 
+        item.stageName === 'distribution' ? 'primary' : 
+        item.stageName === 'pickup_confirmed' ? 'success' : 
+        item.stageName === 'retail' ? 'warning' : 
+        item.stageName === 'sold' ? 'danger' : 'secondary' 
+      %>">
+        <% if (item.stageName === 'production') { %>
+          <i class="fas fa-industry"></i>
+        <% } else if (item.stageName === 'packaging') { %>
+          <i class="fas fa-box"></i>
+        <% } else if (item.stageName === 'qr_generated') { %>
+          <i class="fas fa-qrcode"></i>
+        <% } else if (item.stageName === 'distribution') { %>
+          <i class="fas fa-truck"></i>
+        <% } else if (item.stageName === 'pickup_confirmed') { %>
+          <i class="fas fa-check-circle"></i>
+        <% } else if (item.stageName === 'retail') { %>
+          <i class="fas fa-store"></i>
+        <% } else if (item.stageName === 'sold') { %>
+          <i class="fas fa-shopping-cart"></i>
+        <% } else if (item.stageName === 'ownership_transfer') { %>
+          <i class="fas fa-exchange-alt"></i>
+        <% } else { %>
+          <i class="fas fa-circle"></i>
+        <% } %>
+      </div>
+      
+      <div class="timeline-content">
+        <h5 class="mb-1">
+          <% if (item.stageName === 'production') { %>
+            <i class="fas fa-industry me-2"></i> Sản xuất
+          <% } else if (item.stageName === 'packaging') { %>
+            <i class="fas fa-box me-2"></i> Đóng gói
+          <% } else if (item.stageName === 'qr_generated') { %>
+            <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+          <% } else if (item.stageName === 'distribution') { %>
+            <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
+          <% } else if (item.stageName === 'pickup_confirmed') { %>
+            <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
+          <% } else if (item.stageName === 'retail') { %>
+            <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+          <% } else if (item.stageName === 'ownership_transfer') { %>
+            <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
+          <% } else { %>
+            <i class="fas fa-circle me-2"></i> <%= helpers && helpers.getStageName ? helpers.getStageName(item.stageName) : item.stageName %>
+          <% } %>
+        </h5>
+        
+        <!-- ...existing code... -->
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<div class="timeline">
+  <% if (product.stages && product.stages.length > 0) { %>
+    <% product.stages.forEach(function(stage) { %>
+      <div class="timeline-item">
+        <div class="timeline-icon <%= 
+          stage.stageName === 'production' ? 'bg-primary' : 
+          stage.stageName === 'packaging' ? 'bg-info' : 
+          stage.stageName === 'qr_generated' ? 'bg-secondary' : 
+          stage.stageName === 'distribution' ? 'bg-primary' : 
+          stage.stageName === 'pickup_confirmed' ? 'bg-success' : 
+          stage.stageName === 'retail' ? 'bg-warning' : 
+          stage.stageName === 'sold' ? 'bg-danger' : 'bg-secondary' 
+        %>">
+          <% if (stage.stageName === 'production') { %>
+            <i class="fas fa-industry"></i>
+          <% } else if (stage.stageName === 'packaging') { %>
+            <i class="fas fa-box"></i>
+          <% } else if (stage.stageName === 'qr_generated') { %>
+            <i class="fas fa-qrcode"></i>
+          <% } else if (stage.stageName === 'distribution') { %>
+            <i class="fas fa-truck"></i>
+          <% } else if (stage.stageName === 'pickup_confirmed') { %>
+            <i class="fas fa-check-circle"></i>
+          <% } else if (stage.stageName === 'retail') { %>
+            <i class="fas fa-store"></i>
+          <% } else if (stage.stageName === 'sold') { %>
+            <i class="fas fa-shopping-cart"></i>
+          <% } else { %>
+            <i class="fas fa-circle"></i>
+          <% } %>
+        </div>
+        
+        <div class="timeline-content card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <% if (stage.stageName === 'production') { %>
+                <i class="fas fa-industry me-2"></i> Sản xuất
+              <% } else if (stage.stageName === 'packaging') { %>
+                <i class="fas fa-box me-2"></i> Đóng gói
+              <% } else if (stage.stageName === 'qr_generated') { %>
+                <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+              <% } else if (stage.stageName === 'distribution') { %>
+                <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
+              <% } else if (stage.stageName === 'pickup_confirmed') { %>
+                <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
+              <% } else if (stage.stageName === 'retail') { %>
+                <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+              <% } else if (stage.stageName === 'sold') { %>
+                <i class="fas fa-shopping-cart me-2"></i> Đã bán
+              <% } else { %>
+                <i class="fas fa-circle me-2"></i> <%= stage.stageName %>
+              <% } %>
+            </h5>
+          </div>
+          <!-- ...existing code... -->
+        </div>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <p class="text-muted text-center">Chưa có dữ liệu lịch sử cho sản phẩm này.</p>
+  <% } %>
+</div>

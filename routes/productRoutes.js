@@ -31,4 +31,7 @@ router.post('/:id/transfer', isAuthenticated, productController.transferOwnershi
 // Route hoàn tất giao hàng
 router.post('/complete-delivery', isAuthenticated, productController.completeDelivery);
 
+// Thêm route mới để xử lý xác nhận lấy hàng
+router.post('/confirm-pickup', isAuthenticated, productController.confirmPickup);
+
 module.exports = router;

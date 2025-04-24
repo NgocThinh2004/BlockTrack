@@ -89,334 +89,429 @@
     </div>
   </div>
 
-  <!-- Đơn hàng đang vận chuyển -->
-  <div class="row">
-    <div class="col-12 mb-4">
-      <div class="card card-dashboard shadow border-0 h-100">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
-          <div class="d-flex align-items-center">
-            <span class="icon-circle bg-primary text-white me-2" style="width: 32px; height: 32px;">
-              <i class="fas fa-shipping-fast"></i>
-            </span>
-            <h6 class="m-0 font-weight-bold text-primary">Đơn hàng đang vận chuyển</h6>
-          </div>
-          <span class="badge bg-primary rounded-pill px-3 py-2">
-            <%= (inProgressProducts && inProgressProducts.length) ? inProgressProducts.length : 0 %>
-          </span>
+  <!-- Thêm section mới cho các sản phẩm đang chờ tiếp nhận -->
+  <div class="card shadow-sm mb-4">
+    <% 
+    // Định nghĩa biến pendingPickupProducts để lọc sản phẩm chờ tiếp nhận
+    const pendingPickupProducts = inProgressProducts.filter(p => 
+      p.currentStage === 'distribution' && !p.pickupConfirmedAt); 
+    %>
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-truck-loading me-2 text-primary"></i>Sản phẩm chờ tiếp nhận
+      </h5>
+      <span class="badge bg-warning rounded-pill px-3 py-2">
+        <%= pendingPickupProducts.length %>
+      </span>
+    </div>
+    <div class="card-body">
+      <% if (pendingPickupProducts && pendingPickupProducts.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Từ nhà sản xuất</th>
+                <th>Địa điểm lấy hàng</th>
+                <th>Người nhận cuối</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pendingPickupProducts.forEach(function(product) { %>
+                <tr>
+                  <td>
+                    <a href="/products/<%= product.id %>" class="text-decoration-none">
+                      <strong><%= product.name %></strong>
+                    </a>
+                    <div class="small text-muted">ID: <%= product.id.substring(0, 8) %>...</div>
+                  </td>
+                  <td>
+                    <% if (product.previousOwnerId) { %>
+                      <span class="badge bg-primary"><%= product.manufacturer %></span>
+                    <% } else { %>
+                      <span class="text-muted">Không có thông tin</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (product.pickupLocation && product.pickupLocation !== 'N/A') { %>
+                      <i class="fas fa-map-marker-alt text-danger me-1"></i> <%= product.pickupLocation %>
+                    <% } else { %>
+                      <span class="text-muted">Chưa có thông tin</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (product.finalRecipientName || product.finalRecipientId) { %>
+                      <i class="fas fa-user me-1"></i> <%= product.finalRecipientName || 'Nhà bán lẻ' %>
+                    <% } else { %>
+                      <span class="text-muted">Chưa xác định</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <button 
+                      class="btn btn-sm btn-success" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#confirmPickupModal"
+                      data-product-id="<%= product.id %>"
+                      data-product-name="<%= product.name %>"
+                    >
+                      <i class="fas fa-check me-1"></i> Xác nhận lấy hàng
+                    </button>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
         </div>
-        <div class="card-body p-0">
-          <% if (inProgressProducts && inProgressProducts.length > 0) { %>
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-              <table class="table table-hover align-middle mb-0 border-top">
-                <thead class="table-light sticky-top">
-                  <tr>
-                    <th scope="col" style="width: 25%">Sản phẩm</th>
-                    <th scope="col" style="width: 20%">Người nhận</th>
-                    <th scope="col" style="width: 15%">Xuất xứ</th>
-                    <th scope="col" style="width: 15%">Trạng thái</th>
-                    <th scope="col" style="width: 15%">Thời gian</th>
-                    <th scope="col" style="width: 10%" class="text-center">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% inProgressProducts.forEach(function(product, index) { %>
-                    <tr class="<%= index % 2 === 0 ? 'table-row-even' : 'table-row-odd' %>">
-                      <td>
+      <% } else { %>
+        <div class="text-center p-5">
+          <div class="mb-4">
+            <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
+              <i class="fas fa-truck-loading fa-3x text-muted opacity-50"></i>
+            </div>
+          </div>
+          <h5 class="text-muted mb-3">Không có sản phẩm nào đang chờ tiếp nhận</h5>
+          <p class="text-muted mb-0 px-5">Khi nhà sản xuất chuyển sản phẩm cho bạn, chúng sẽ xuất hiện ở đây</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Đơn hàng đang vận chuyển -->
+  <div class="card shadow-sm mb-4">
+    <% 
+    // Định nghĩa biến activeShippingProducts để chỉ lấy sản phẩm đã xác nhận lấy hàng
+    const activeShippingProducts = inProgressProducts.filter(p => 
+      (p.currentStage === 'distribution' && p.pickupConfirmedAt) || 
+      p.currentStage === 'pickup_confirmed'); 
+    %>
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-truck me-2 text-primary"></i>Đơn hàng đang vận chuyển
+      </h5>
+      <span class="badge bg-primary rounded-pill px-3 py-2">
+        <%= activeShippingProducts.length %>
+      </span>
+    </div>
+    <div class="card-body">
+      <% if (activeShippingProducts && activeShippingProducts.length > 0) { %>
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover align-middle mb-0 border-top">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th scope="col" style="width: 25%">Sản phẩm</th>
+                <th scope="col" style="width: 20%">Người nhận</th>
+                <th scope="col" style="width: 15%">Xuất xứ</th>
+                <th scope="col" style="width: 15%">Trạng thái</th>
+                <th scope="col" style="width: 15%">Thời gian</th>
+                <th scope="col" style="width: 10%" class="text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% activeShippingProducts.forEach(function(product, index) { %>
+                <tr class="<%= index % 2 === 0 ? 'table-row-even' : 'table-row-odd' %>">
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="product-icon me-3 rounded d-flex align-items-center justify-content-center" style="background-color: rgba(13, 110, 253, 0.1); width: 45px; height: 45px;">
+                        <i class="fas fa-box text-primary"></i>
+                      </div>
+                      <div>
+                        <div class="font-weight-bold text-truncate" style="max-width: 180px;" title="<%= product.name %>"><%= product.name %></div>
                         <div class="d-flex align-items-center">
-                          <div class="product-icon me-3 rounded d-flex align-items-center justify-content-center" style="background-color: rgba(13, 110, 253, 0.1); width: 45px; height: 45px;">
-                            <i class="fas fa-box text-primary"></i>
-                          </div>
-                          <div>
-                            <div class="font-weight-bold text-truncate" style="max-width: 180px;" title="<%= product.name %>"><%= product.name %></div>
-                            <div class="d-flex align-items-center">
-                              <span class="badge bg-light text-secondary border me-1">ID: <%= product.id.substring(0, 8) %>...</span>
-                              <% if (product.batchNumber) { %>
-                                <span class="badge bg-light text-dark border">Lô: <%= product.batchNumber %></span>
-                              <% } %>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <% if (product.finalRecipientName) { %>
-                          <div class="d-flex flex-column">
-                            <span class="fw-bold text-truncate" style="max-width: 150px;"><%= product.finalRecipientName %></span>
-                            <div class="d-flex align-items-center">
-                              <span class="badge bg-info-subtle text-info border-0 me-1">
-                                <i class="fas fa-store me-1 small"></i>Nhà bán lẻ
-                              </span>
-                            </div>
-                          </div>
-                        <% } else { %>
-                          <span class="text-muted">Chưa xác định</span>
-                        <% } %>
-                      </td>
-                      <td>
-                        <div class="d-flex flex-column">
-                          <span class="text-truncate fw-medium" style="max-width: 120px;" title="<%= product.manufacturer %>">
-                            <%= product.manufacturer %>
-                          </span>
-                          <small class="text-muted text-truncate" style="max-width: 120px;" title="<%= product.origin %>">
-                            <i class="fas fa-map-marker-alt me-1"></i><%= product.origin %>
-                          </small>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="position-relative me-2">
-                            <div class="progress" style="width: 40px; height: 40px; border-radius: 50%;">
-                              <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <div class="position-absolute top-50 start-50 translate-middle">
-                              <i class="fas fa-truck text-white"></i>
-                            </div>
-                          </div>
-                          <div>
-                            <div class="fw-medium">Đang vận chuyển</div>
-                            <small class="text-muted">Cần giao trong <%= Math.floor(Math.random() * 5) + 1 %> ngày</small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="d-flex flex-column">
-                          <% if (product.receivedDate) { %>
-                            <div class="d-flex align-items-center mb-1">
-                              <i class="fas fa-calendar-check text-success me-1"></i>
-                              <span class="small fw-medium">Đã nhận: </span>
-                            </div>
-                            <span class="small"><%= new Date(product.receivedDate).toLocaleDateString('vi-VN') %></span>
-                          <% } else { %>
-                            <span class="badge bg-warning text-dark mb-1">Chưa nhận</span>
-                            <small class="text-muted">Đang chờ xác nhận</small>
+                          <span class="badge bg-light text-secondary border me-1">ID: <%= product.id.substring(0, 8) %>...</span>
+                          <% if (product.batchNumber) { %>
+                            <span class="badge bg-light text-dark border">Lô: <%= product.batchNumber %></span>
                           <% } %>
                         </div>
-                      </td>
-                      <td class="text-center">
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-success btn-sm rounded-3 me-1" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#completeDeliveryModal"
-                            data-product-id="<%= product.id %>" 
-                            data-recipient-id="<%= product.finalRecipientId %>"
-                            data-product-name="<%= product.name %>">
-                            <i class="fas fa-truck-loading me-1"></i> Giao hàng
-                          </button>
-                          <a href="/products/<%= product.id %>" class="btn btn-outline-primary btn-sm rounded-3">
-                            <i class="fas fa-eye"></i>
-                          </a>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (product.finalRecipientName || product.finalRecipientId) { %>
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold text-truncate" style="max-width: 150px;"><%= product.finalRecipientName || 'Nhà bán lẻ' %></span>
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-info-subtle text-info border-0 me-1">
+                            <i class="fas fa-store me-1 small"></i>Nhà bán lẻ
+                          </span>
                         </div>
-                      </td>
-                    </tr>
-                  <% }); %>
-                </tbody>
-              </table>
-            </div>
-          <% } else { %>
-            <div class="text-center p-5">
-              <div class="mb-4">
-                <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
-                  <i class="fas fa-shipping-fast fa-3x text-muted opacity-50"></i>
-                </div>
-              </div>
-              <h5 class="text-muted mb-3">Không có đơn hàng đang vận chuyển</h5>
-              <p class="text-muted mb-0 px-5">Khi bạn nhận đơn hàng từ nhà sản xuất, chúng sẽ xuất hiện ở đây</p>
-            </div>
-          <% } %>
+                      </div>
+                    <% } else { %>
+                      <span class="text-muted">Chưa xác định</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <span class="text-truncate fw-medium" style="max-width: 120px;" title="<%= product.manufacturer %>">
+                        <%= product.manufacturer %>
+                      </span>
+                      <small class="text-muted text-truncate" style="max-width: 120px;" title="<%= product.origin %>">
+                        <i class="fas fa-map-marker-alt me-1"></i><%= product.origin %>
+                      </small>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="position-relative me-2">
+                        <div class="progress" style="width: 40px; height: 40px; border-radius: 50%;">
+                          <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                          <i class="fas fa-truck text-white"></i>
+                        </div>
+                      </div>
+                      <div>
+                        <% 
+                          // Kiểm tra xem sản phẩm có phải mới được xác nhận lấy hàng hay không
+                          const isRecentlyPickedUp = product.currentStage === 'pickup_confirmed' || 
+                            (product.pickupConfirmedAt && 
+                             (typeof product.pickupConfirmedAt === 'object' && 
+                              product.pickupConfirmedAt.toDate ? 
+                              (new Date() - product.pickupConfirmedAt.toDate() < 24 * 60 * 60 * 1000) : 
+                              (new Date() - new Date(product.pickupConfirmedAt) < 24 * 60 * 60 * 1000)
+                             )
+                            );
+                        %>
+                        <% if (isRecentlyPickedUp) { %>
+                          <div class="fw-medium text-success">Lấy hàng thành công</div>
+                          <small class="text-muted">Sẵn sàng giao cho người nhận</small>
+                        <% } else { %>
+                          <div class="fw-medium">Đang vận chuyển</div>
+                          <small class="text-muted">Cần giao trong <%= Math.floor(Math.random() * 5) + 1 %> ngày</small>
+                        <% } %>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <% if (product.receivedDate) { %>
+                        <div class="d-flex align-items-center mb-1">
+                          <i class="fas fa-calendar-check text-success me-1"></i>
+                          <span class="small fw-medium">Đã nhận: </span>
+                        </div>
+                        <span class="small"><%= new Date(product.receivedDate).toLocaleDateString('vi-VN') %></span>
+                      <% } else { %>
+                        <span class="badge bg-warning text-dark mb-1">Chưa nhận</span>
+                        <small class="text-muted">Đang chờ xác nhận</small>
+                      <% } %>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-success btn-sm rounded-3 me-1" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#completeDeliveryModal"
+                        data-product-id="<%= product.id %>" 
+                        data-recipient-id="<%= product.finalRecipientId %>"
+                        data-product-name="<%= product.name %>">
+                        <i class="fas fa-truck-loading me-1"></i> Giao hàng
+                      </button>
+                      <a href="/products/<%= product.id %>" class="btn btn-outline-primary btn-sm rounded-3">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
         </div>
-      </div>
+      <% } else { %>
+        <div class="text-center p-5">
+          <div class="mb-4">
+            <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
+              <i class="fas fa-shipping-fast fa-3x text-muted opacity-50"></i>
+            </div>
+          </div>
+          <h5 class="text-muted mb-3">Không có đơn hàng đang vận chuyển</h5>
+          <p class="text-muted mb-0 px-5">Khi bạn xác nhận lấy hàng, các sản phẩm sẽ xuất hiện ở đây</p>
+        </div>
+      <% } %>
     </div>
   </div>
 
   <!-- Hoạt động gần đây -->
-  <div class="row">
-    <div class="col-12 mb-4">
-      <div class="card card-dashboard shadow border-0 h-100">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
-          <div class="d-flex align-items-center">
-            <span class="icon-circle bg-info text-white me-2" style="width: 32px; height: 32px;">
-              <i class="fas fa-history"></i>
-            </span>
-            <h6 class="m-0 font-weight-bold text-primary">Hoạt động gần đây</h6>
-          </div>
-        </div>
-        <div class="card-body">
-          <% if (activities && Array.isArray(activities) && activities.length > 0) { %>
-            <div class="activities-list" style="max-height: 400px; overflow-y: auto;">
-              <% activities.forEach(function(activity, index) { %>
-                <div class="activity-item d-flex align-items-center mb-3 p-3 border-start border-4 
-                  <% if (activity.type === 'product_transferred') { %>
-                    border-primary
-                  <% } else if (activity.type === 'delivery_completed') { %>
-                    border-success
-                  <% } else if (activity.type === 'product_received') { %>
-                    border-info
-                  <% } else { %>
-                    border-warning
-                  <% } %>
-                  <%= index % 2 === 0 ? 'bg-light-hover' : '' %> rounded-3"
-                >
-                  <div class="activity-icon-wrapper 
-                    <% if (activity.type === 'product_transferred') { %>
-                      gradient-primary
-                    <% } else if (activity.type === 'delivery_completed') { %>
-                      gradient-success
-                    <% } else if (activity.type === 'product_received') { %>
-                      gradient-info
-                    <% } else { %>
-                      gradient-warning
-                    <% } %>
-                  ">
-                    <% if (activity.type === 'product_transferred') { %>
-                      <i class="fas fa-exchange-alt"></i>
-                    <% } else if (activity.type === 'delivery_completed') { %>
-                      <i class="fas fa-truck-loading"></i>
-                    <% } else if (activity.type === 'product_received') { %>
-                      <i class="fas fa-box-open"></i>
-                    <% } else { %>
-                      <i class="fas fa-history"></i>
-                    <% } %>
-                  </div>
-                  <div class="ms-3 flex-grow-1">
-                    <p class="mb-1 fw-bold text-dark"><%= activity.description || 'Hoạt động không xác định' %></p>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <small class="text-muted">
-                        <% 
-                          let formattedTime = 'N/A';
-                          try {
-                            if (activity.timestamp) {
-                              if (typeof activity.timestamp === 'object' && activity.timestamp.toDate) {
-                                // Firebase Timestamp object
-                                formattedTime = activity.timestamp.toDate().toLocaleString('vi-VN');
-                              } else if (activity.timestamp instanceof Date) {
-                                // JavaScript Date object 
-                                formattedTime = activity.timestamp.toLocaleString('vi-VN');
-                              } else if (typeof activity.timestamp === 'string') {
-                                // String timestamp
-                                formattedTime = new Date(activity.timestamp).toLocaleString('vi-VN');
-                              } else if (typeof activity.timestamp === 'number') {
-                                // Unix timestamp (milliseconds)
-                                formattedTime = new Date(activity.timestamp).toLocaleString('vi-VN');
-                              }
-                            }
-                          } catch (e) {
-                            console.error('Error formatting timestamp:', e);
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-history me-2 text-primary"></i>Hoạt động gần đây
+      </h5>
+    </div>
+    <div class="card-body">
+      <% if (activities && Array.isArray(activities) && activities.length > 0) { %>
+        <div class="activities-list" style="max-height: 400px; overflow-y: auto;">
+          <% activities.forEach(function(activity, index) { %>
+            <div class="activity-item d-flex align-items-center mb-3 p-3 border-start border-4 
+              <% if (activity.type === 'product_transferred') { %>
+                border-primary
+              <% } else if (activity.type === 'delivery_completed') { %>
+                border-success
+              <% } else if (activity.type === 'product_received') { %>
+                border-info
+              <% } else if (activity.type === 'pickup_confirmed') { %>
+                border-warning
+              <% } else { %>
+                border-secondary
+              <% } %>
+              <%= index % 2 === 0 ? 'bg-light-hover' : '' %> rounded-3"
+            >
+              <div class="activity-icon-wrapper 
+                <% if (activity.type === 'product_transferred') { %>
+                  gradient-primary
+                <% } else if (activity.type === 'delivery_completed') { %>
+                  gradient-success
+                <% } else if (activity.type === 'product_received') { %>
+                  gradient-info
+                <% } else if (activity.type === 'pickup_confirmed') { %>
+                  gradient-warning
+                <% } else { %>
+                  gradient-secondary
+                <% } %>
+              ">
+                <% if (activity.type === 'product_transferred') { %>
+                  <i class="fas fa-exchange-alt"></i>
+                <% } else if (activity.type === 'delivery_completed') { %>
+                  <i class="fas fa-truck-loading"></i>
+                <% } else if (activity.type === 'product_received') { %>
+                  <i class="fas fa-box-open"></i>
+                <% } else if (activity.type === 'pickup_confirmed') { %>
+                  <i class="fas fa-check-circle"></i>
+                <% } else { %>
+                  <i class="fas fa-history"></i>
+                <% } %>
+              </div>
+              <div class="ms-3 flex-grow-1">
+                <p class="mb-1 fw-bold text-dark"><%= activity.description || 'Hoạt động không xác định' %></p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">
+                    <% 
+                      let formattedTime = 'N/A';
+                      try {
+                        if (activity.timestamp) {
+                          if (typeof activity.timestamp === 'object' && activity.timestamp.toDate) {
+                            // Firebase Timestamp object
+                            formattedTime = activity.timestamp.toDate().toLocaleString('vi-VN');
+                          } else if (activity.timestamp instanceof Date) {
+                            // JavaScript Date object 
+                            formattedTime = activity.timestamp.toLocaleString('vi-VN');
+                          } else if (typeof activity.timestamp === 'string') {
+                            // String timestamp
+                            formattedTime = new Date(activity.timestamp).toLocaleString('vi-VN');
+                          } else if (typeof activity.timestamp === 'number') {
+                            // Unix timestamp (milliseconds)
+                            formattedTime = new Date(activity.timestamp).toLocaleString('vi-VN');
                           }
-                        %>
-                        <i class="far fa-clock me-1"></i> <%= formattedTime %>
-                      </small>
-                      <% if (activity.entityId) { %>
-                        <a href="/products/<%= activity.entityId %>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                          <i class="fas fa-eye me-1"></i> Xem
-                        </a>
-                      <% } %>
-                    </div>
-                  </div>
-                </div>
-              <% }); %>
-            </div>
-            
-            <div class="text-center mt-3">
-              <button class="btn btn-outline-primary rounded-pill px-4 refresh-activities">
-                <i class="fas fa-sync-alt me-1"></i> Làm mới hoạt động
-              </button>
-            </div>
-          <% } else { %>
-            <div class="activity-empty text-center py-5">
-              <div class="mb-4">
-                <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
-                  <i class="fas fa-bell-slash fa-3x text-muted opacity-50"></i>
+                        }
+                      } catch (e) {
+                        console.error('Error formatting timestamp:', e);
+                      }
+                    %>
+                    <i class="far fa-clock me-1"></i> <%= formattedTime %>
+                  </small>
+                  <% if (activity.entityId) { %>
+                    <a href="/products/<%= activity.entityId %>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                      <i class="fas fa-eye me-1"></i> Xem
+                    </a>
+                  <% } %>
                 </div>
               </div>
-              <h5 class="text-muted mb-3">Không có hoạt động nào gần đây</h5>
-              <p class="text-muted">Hoạt động sẽ được hiển thị khi bạn thực hiện các tác vụ</p>
             </div>
-          <% } %>
+          <% }); %>
         </div>
-      </div>
+        
+        <div class="text-center mt-3">
+          <button class="btn btn-outline-primary rounded-pill px-4 refresh-activities">
+            <i class="fas fa-sync-alt me-1"></i> Làm mới hoạt động
+          </button>
+        </div>
+      <% } else { %>
+        <div class="activity-empty text-center py-5">
+          <div class="mb-4">
+            <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
+              <i class="fas fa-bell-slash fa-3x text-muted opacity-50"></i>
+            </div>
+          </div>
+          <h5 class="text-muted mb-3">Không có hoạt động nào gần đây</h5>
+          <p class="text-muted">Hoạt động sẽ được hiển thị khi bạn thực hiện các tác vụ</p>
+        </div>
+      <% } %>
     </div>
   </div>
 
   <!-- Lịch sử giao hàng -->
-  <div class="row">
-    <div class="col-12 mb-4">
-      <div class="card card-dashboard shadow border-0">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom-0">
-          <div class="d-flex align-items-center">
-            <span class="icon-circle bg-success text-white me-2" style="width: 32px; height: 32px;">
-              <i class="fas fa-check-circle"></i>
-            </span>
-            <h6 class="m-0 font-weight-bold text-primary">Lịch sử giao hàng</h6>
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-check-circle me-2 text-success"></i>Lịch sử giao hàng
+      </h5>
+      <span class="badge bg-success rounded-pill px-3 py-2">
+        <%= (deliveredProducts && deliveredProducts.length) ? deliveredProducts.length : 0 %>
+      </span>
+    </div>
+    <div class="card-body">
+      <% if (deliveredProducts && deliveredProducts.length > 0) { %>
+        <div class="table-responsive">
+          <table class="table table-hover table-modern">
+            <thead>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>Mã sản phẩm</th>
+                <th>Nhà sản xuất</th>
+                <th>Người nhận</th>
+                <th>Ngày giao</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% deliveredProducts.forEach(function(product, index) { %>
+                <tr class="<%= index % 2 === 0 ? 'table-row-even' : 'table-row-odd' %>">
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="product-icon me-3 rounded d-flex align-items-center justify-content-center" style="background-color: rgba(40, 167, 69, 0.1); width: 40px; height: 40px;">
+                        <i class="fas fa-box-open text-success"></i>
+                      </div>
+                      <div class="font-weight-bold"><%= product.name %></div>
+                    </div>
+                  </td>
+                  <td><code class="bg-light text-dark px-2 py-1 rounded"><%= product.id.substring(0, 10) %>...</code></td>
+                  <td><%= product.manufacturer %></td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-user text-info me-2"></i>
+                      <%= product.finalRecipientName || 'Không xác định' %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (product.deliveryDate) { %>
+                      <div class="d-flex align-items-center">
+                        <i class="fas fa-calendar-check text-success me-2"></i>
+                        <%= new Date(product.deliveryDate).toLocaleDateString('vi-VN') %>
+                      </div>
+                    <% } else { %>
+                      <span class="badge bg-success rounded-pill px-3 py-2">Đã hoàn thành</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <a href="/products/<%= product.id %>" class="btn btn-sm btn-outline-primary rounded-3">
+                      <i class="fas fa-eye me-1"></i> Chi tiết
+                    </a>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="text-center py-5">
+          <div class="mb-4">
+            <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
+              <i class="fas fa-truck-loading fa-3x text-muted opacity-50"></i>
+            </div>
           </div>
-          <span class="badge bg-success rounded-pill px-3 py-2">
-            <%= (deliveredProducts && deliveredProducts.length) ? deliveredProducts.length : 0 %>
-          </span>
+          <h5 class="text-muted mb-3">Chưa có lịch sử giao hàng</h5>
+          <p class="text-muted">Các đơn hàng đã giao sẽ xuất hiện ở đây</p>
         </div>
-        <div class="card-body">
-          <% if (deliveredProducts && deliveredProducts.length > 0) { %>
-            <div class="table-responsive">
-              <table class="table table-hover table-modern">
-                <thead>
-                  <tr>
-                    <th>Sản phẩm</th>
-                    <th>Mã sản phẩm</th>
-                    <th>Nhà sản xuất</th>
-                    <th>Người nhận</th>
-                    <th>Ngày giao</th>
-                    <th>Hành động</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% deliveredProducts.forEach(function(product, index) { %>
-                    <tr class="<%= index % 2 === 0 ? 'table-row-even' : 'table-row-odd' %>">
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="product-icon me-3 rounded d-flex align-items-center justify-content-center" style="background-color: rgba(40, 167, 69, 0.1); width: 40px; height: 40px;">
-                            <i class="fas fa-box-open text-success"></i>
-                          </div>
-                          <div class="font-weight-bold"><%= product.name %></div>
-                        </div>
-                      </td>
-                      <td><code class="bg-light text-dark px-2 py-1 rounded"><%= product.id.substring(0, 10) %>...</code></td>
-                      <td><%= product.manufacturer %></td>
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <i class="fas fa-user text-info me-2"></i>
-                          <%= product.finalRecipientName || 'Không xác định' %>
-                        </div>
-                      </td>
-                      <td>
-                        <% if (product.deliveryDate) { %>
-                          <div class="d-flex align-items-center">
-                            <i class="fas fa-calendar-check text-success me-2"></i>
-                            <%= new Date(product.deliveryDate).toLocaleDateString('vi-VN') %>
-                          </div>
-                        <% } else { %>
-                          <span class="badge bg-success rounded-pill px-3 py-2">Đã hoàn thành</span>
-                        <% } %>
-                      </td>
-                      <td>
-                        <a href="/products/<%= product.id %>" class="btn btn-sm btn-outline-primary rounded-3">
-                          <i class="fas fa-eye me-1"></i> Chi tiết
-                        </a>
-                      </td>
-                    </tr>
-                  <% }); %>
-                </tbody>
-              </table>
-            </div>
-          <% } else { %>
-            <div class="text-center py-5">
-              <div class="mb-4">
-                <div class="icon-circle mx-auto bg-light" style="width: 80px; height: 80px;">
-                  <i class="fas fa-truck-loading fa-3x text-muted opacity-50"></i>
-                </div>
-              </div>
-              <h5 class="text-muted mb-3">Chưa có lịch sử giao hàng</h5>
-              <p class="text-muted">Các đơn hàng đã giao sẽ xuất hiện ở đây</p>
-            </div>
-          <% } %>
-        </div>
-      </div>
+      <% } %>
     </div>
   </div>
 </div>
@@ -435,7 +530,7 @@
           <input type="hidden" name="recipientId" id="modal-recipient-id">
           
           <div class="text-center mb-4">
-            <div class="mb-3 d-inline-block p-3 rounded-circle gradient-success"></div>
+            <div class="mb-3 d-inline-block p-3 rounded-circle gradient-success">
               <i class="fas fa-shipping-fast text-white fa-3x"></i>
             </div>
             <h4 class="font-weight-bold">Xác nhận giao hàng</h4>
@@ -445,7 +540,7 @@
           
           <div class="mb-3">
             <label for="location" class="form-label font-weight-bold">Địa điểm giao hàng</label>
-            <div class="input-group"></div>
+            <div class="input-group">
               <span class="input-group-text gradient-primary text-white"><i class="fas fa-map-marker-alt"></i></span>
               <input type="text" class="form-control" id="location" name="location" required>
             </div>
@@ -472,49 +567,37 @@
   </div>
 </div>
 
-<!-- Modal nhận sản phẩm -->
-<div class="modal fade" id="receiveProductModal" tabindex="-1" aria-labelledby="receiveProductModalLabel" aria-hidden="true">
+<!-- Modal xác nhận lấy hàng -->
+<div class="modal fade" id="confirmPickupModal" tabindex="-1" aria-labelledby="confirmPickupModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
-      <div class="modal-header gradient-primary text-white"></div>
-        <h5 class="modal-title" id="receiveProductModalLabel">Xác nhận nhận hàng</h5>
+      <div class="modal-header gradient-primary text-white">
+        <h5 class="modal-title" id="confirmPickupModalLabel">Xác nhận lấy hàng</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/products/receive-product" method="POST">
+      <form action="/products/confirm-pickup" method="POST">
         <div class="modal-body p-4">
-          <input type="hidden" name="productId" id="receive-product-id">
+          <input type="hidden" name="productId" id="confirm-pickup-product-id">
           
           <div class="text-center mb-4">
             <div class="mb-3 d-inline-block p-3 rounded-circle gradient-primary">
-              <i class="fas fa-box-open text-white fa-3x"></i>
+              <i class="fas fa-truck-loading text-white fa-3x"></i>
             </div>
-            <h4 class="font-weight-bold">Xác nhận nhận hàng</h4>
-            <p class="text-muted">Bạn đang xác nhận nhận sản phẩm:</p>
-            <div class="alert alert-light border font-weight-bold py-3" id="receive-product-name"></div>
+            <h4 class="font-weight-bold">Xác nhận lấy hàng</h4>
+            <p class="text-muted">Bạn đang xác nhận đã lấy sản phẩm:</p>
+            <div class="alert alert-light border font-weight-bold py-3" id="confirm-pickup-product-name"></div>
           </div>
           
-          <div class="mb-3">
-            <label for="receive-location" class="form-label font-weight-bold">Địa điểm nhận hàng</label>
-            <div class="input-group">
-              <span class="input-group-text gradient-primary text-white"><i class="fas fa-map-marker-alt"></i></span>
-              <input type="text" class="form-control" id="receive-location" name="location" required>
-            </div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="receive-notes" class="form-label font-weight-bold">Ghi chú</label>
-            <div class="input-group">
-              <span class="input-group-text gradient-primary text-white"><i class="fas fa-sticky-note"></i></span>
-              <textarea class="form-control" id="receive-notes" name="notes" rows="3"></textarea>
-            </div>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> Sau khi xác nhận lấy hàng, sản phẩm sẽ được chuyển sang danh sách "Đơn hàng đang vận chuyển" và bạn có thể giao hàng cho người nhận cuối.
           </div>
         </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+        <div class="modal-footer justify-content-between">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             <i class="fas fa-times me-1"></i> Hủy
           </button>
-          <button type="submit" class="btn btn-primary">
-            <i class="fas fa-check me-1"></i> Xác nhận nhận hàng
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-check me-1"></i> Xác nhận lấy hàng
           </button>
         </div>
       </form>
@@ -539,16 +622,16 @@
       });
     }
     
-    // Xử lý modal nhận sản phẩm
-    const receiveProductModal = document.getElementById('receiveProductModal');
-    if (receiveProductModal) {
-      receiveProductModal.addEventListener('show.bs.modal', function(event) {
+    // Xử lý modal xác nhận lấy hàng
+    const confirmPickupModal = document.getElementById('confirmPickupModal');
+    if (confirmPickupModal) {
+      confirmPickupModal.addEventListener('show.bs.modal', function(event) {
         const button = event.relatedTarget;
         const productId = button.getAttribute('data-product-id');
         const productName = button.getAttribute('data-product-name');
         
-        document.getElementById('receive-product-id').value = productId;
-        document.getElementById('receive-product-name').textContent = productName || 'Không xác định';
+        document.getElementById('confirm-pickup-product-id').value = productId;
+        document.getElementById('confirm-pickup-product-name').textContent = productName || 'Không xác định';
       });
     }
     
@@ -562,32 +645,23 @@
         dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
         pagingType: "simple_numbers",
         lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tất cả"]],
-        pageLength: 10,
         columnDefs: [
           { orderable: false, targets: 5 } // Không sắp xếp cột thao tác
         ],
+        responsive: true,
         autoWidth: false,
-        responsive: true
       });
     }
     
-    // Khởi tạo tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-    
     // Làm mới hoạt động
-    const refreshBtn = document.querySelector('.refresh-activities');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', function() {
-        // Thêm hiệu ứng quay cho icon
+    const refreshActivitiesButton = document.querySelector('.refresh-activities');
+    if (refreshActivitiesButton) {
+      refreshActivitiesButton.addEventListener('click', function() {
+        this.disabled = true;
         const icon = this.querySelector('i');
         icon.classList.add('fa-spin');
-        this.disabled = true;
         
-        // Gọi API để làm mới hoạt động
-        fetch('/api/refresh-activities', {
+        fetch('/activities/refresh', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -597,7 +671,6 @@
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            // Làm mới trang sau khi API thành công
             window.location.reload();
           } else {
             alert('Không thể làm mới hoạt động: ' + (data.message || 'Lỗi không xác định'));
@@ -607,12 +680,17 @@
         })
         .catch(error => {
           console.error('Lỗi khi làm mới hoạt động:', error);
-          alert('Đã xảy ra lỗi khi làm mới hoạt động');
           icon.classList.remove('fa-spin');
           this.disabled = false;
         });
       });
     }
+    
+    // Khởi tạo tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
   });
 </script>
 
@@ -620,11 +698,11 @@
 <style>
   .card-dashboard {
     border-radius: 0.75rem;
+    border: none;
     overflow: hidden;
     box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
     margin-bottom: 1rem;
     transition: transform 0.2s, box-shadow 0.2s;
-    border: none;
   }
   
   .card-dashboard:hover {
@@ -648,6 +726,10 @@
     background: linear-gradient(45deg, #f6c23e, #ffaa00);
   }
   
+  .gradient-secondary {
+    background: linear-gradient(45deg, #6c757d, #495057);
+  }
+  
   .icon-circle {
     width: 45px;
     height: 45px;
@@ -655,6 +737,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
+    flex-shrink: 0;
   }
   
   .bg-opacity-10 {
