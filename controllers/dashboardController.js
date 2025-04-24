@@ -227,7 +227,8 @@ exports.getRetailerDashboard = async (req, res, next) => {
     const productsByStage = {
       inStock: currentProducts.filter(p => p.currentStage === 'retail').length,
       qr_generated: currentProducts.filter(p => p.currentStage === 'qr_generated').length,
-      sold: currentProducts.filter(p => p.currentStage === 'sold').length
+      sold: currentProducts.filter(p => p.currentStage === 'sold').length,
+      pickup_confirmed: currentProducts.filter(p => p.currentStage === 'pickup_confirmed').length, // Thêm đếm sản phẩm giai đoạn lấy hàng thành công
     };
 
     console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);

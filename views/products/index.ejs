@@ -79,10 +79,13 @@
               <span class="badge bg-<%= 
                 product.currentStage === 'production' ? 'primary' : 
                 product.currentStage === 'packaging' ? 'info' : 
+                product.currentStage === 'qr_generated' ? 'secondary' : 
                 product.currentStage === 'distribution' ? 'warning' : 
-                product.currentStage === 'retail' ? 'success' : 'secondary' 
+                product.currentStage === 'pickup_confirmed' ? 'success' : 
+                product.currentStage === 'retail' ? 'success' : 
+                product.currentStage === 'sold' ? 'danger' : 'secondary' 
               %>">
-                <%= product.currentStage %>
+                <%= formatStageName(product.currentStage) %>
               </span>
               <small class="text-muted">
                 <% 
@@ -211,3 +214,18 @@
     });
   });
 </script>
+
+<%
+function formatStageName(stageName) {
+  switch(stageName) {
+    case 'production': return 'Sản xuất';
+    case 'packaging': return 'Đóng gói';
+    case 'qr_generated': return 'Tạo mã QR';
+    case 'distribution': return 'Đang phân phối';
+    case 'pickup_confirmed': return 'Lấy hàng thành công';
+    case 'retail': return 'Đã đến nhà bán lẻ';
+    case 'sold': return 'Đã bán';
+    default: return stageName;
+  }
+}
+%>

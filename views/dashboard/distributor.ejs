@@ -260,24 +260,13 @@
                           <i class="fas fa-truck text-white"></i>
                         </div>
                       </div>
-                      <div>
-                        <% 
-                          // Kiểm tra xem sản phẩm có phải mới được xác nhận lấy hàng hay không
-                          const isRecentlyPickedUp = product.currentStage === 'pickup_confirmed' || 
-                            (product.pickupConfirmedAt && 
-                             (typeof product.pickupConfirmedAt === 'object' && 
-                              product.pickupConfirmedAt.toDate ? 
-                              (new Date() - product.pickupConfirmedAt.toDate() < 24 * 60 * 60 * 1000) : 
-                              (new Date() - new Date(product.pickupConfirmedAt) < 24 * 60 * 60 * 1000)
-                             )
-                            );
-                        %>
-                        <% if (isRecentlyPickedUp) { %>
+                      <div class="d-flex flex-column">
+                        <% if (product.currentStage === 'pickup_confirmed') { %>
                           <div class="fw-medium text-success">Lấy hàng thành công</div>
                           <small class="text-muted">Sẵn sàng giao cho người nhận</small>
                         <% } else { %>
-                          <div class="fw-medium">Đang vận chuyển</div>
-                          <small class="text-muted">Cần giao trong <%= Math.floor(Math.random() * 5) + 1 %> ngày</small>
+                          <div class="fw-medium"><%= getStageName(product.currentStage) %></div>
+                          <small class="text-muted">Cập nhật <%= timeAgo(product.updatedAt) %></small>
                         <% } %>
                       </div>
                     </div>
@@ -692,6 +681,22 @@
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
   });
+
+  // Thêm helper function ở đầu file hoặc trong một partial
+  <% 
+  function getStageName(stageName) {
+    switch(stageName) {
+      case 'production': return 'Sản xuất';
+      case 'packaging': return 'Đóng gói';
+      case 'qr_generated': return 'Tạo mã QR';
+      case 'distribution': return 'Đang phân phối';
+      case 'pickup_confirmed': return 'Lấy hàng thành công';
+      case 'retail': return 'Đã đến nhà bán lẻ';
+      case 'sold': return 'Đã bán';
+      default: return stageName;
+    }
+  }
+  %>
 </script>
 
 <!-- CSS styles cho dashboard -->

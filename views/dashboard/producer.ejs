@@ -157,7 +157,9 @@
                       </td>
                       <td>
                         <div class="d-flex align-items-center">
-                          <% if (product.currentStage === 'production') { %>
+                          <% if (product.currentStage === 'pickup_confirmed') { %>
+                            <span class="badge bg-success">Lấy hàng thành công</span>
+                          <% } else if (product.currentStage === 'production') { %>
                             <span class="badge bg-primary-subtle text-primary me-2 px-3 py-2 rounded-pill">
                               <i class="fas fa-cogs me-1"></i> Sản xuất
                             </span>

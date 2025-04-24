@@ -14,18 +14,27 @@
           <span class="badge bg-<%= 
             product.currentStage === 'production' ? 'primary' : 
             product.currentStage === 'packaging' ? 'info' : 
+            product.currentStage === 'qr_generated' ? 'secondary' : 
             product.currentStage === 'distribution' ? 'warning' : 
+            product.currentStage === 'pickup_confirmed' ? 'success' : 
             product.currentStage === 'retail' ? 'success' : 'secondary' 
           %> fs-6">
-            <%= product.currentStage %>
+            <% if (product.currentStage === 'pickup_confirmed') { %>
+              <i class="fas fa-check-circle me-1"></i> Lấy hàng thành công
+            <% } else if (product.currentStage === 'distribution') { %>
+              <i class="fas fa-truck me-1"></i> Đang phân phối
+            <% } else if (product.currentStage === 'production') { %>
+              <i class="fas fa-industry me-1"></i> Sản xuất
+            <% } else if (product.currentStage === 'packaging') { %>
+              <i class="fas fa-box me-1"></i> Đóng gói
+            <% } else if (product.currentStage === 'retail') { %>
+              <i class="fas fa-store me-1"></i> Đã đến nhà bán lẻ  
+            <% } else if (product.currentStage === 'sold') { %>
+              <i class="fas fa-shopping-cart me-1"></i> Đã bán
+            <% } else { %>
+              <%= product.currentStage %>
+            <% } %>
           </span>
-          <% if (product.currentStage === 'pickup_confirmed') { %>
-            <span class="badge bg-success">Đã lấy hàng thành công</span>
-          <% } else if (product.currentStage === 'distribution') { %>
-            <span class="badge bg-primary">Đang phân phối</span>
-          <% } else { %>
-            <!-- Các trạng thái khác -->
-          <% } %>
         </div>
         <div class="card-body">
           <div class="row mb-3">
@@ -211,7 +220,7 @@
                 <% } else if (stage.stageName === 'distribution') { %>
                   <i class="fas fa-truck"></i>
                 <% } else if (stage.stageName === 'pickup_confirmed') { %>
-                  <i class="fas fa-check-circle"></i>
+                  <i class="fas fa-check-circle"></i> Lấy hàng thành công
                 <% } else if (stage.stageName === 'retail') { %>
                   <i class="fas fa-store"></i>
                 <% } else if (stage.stageName === 'sold') { %>
@@ -220,27 +229,28 @@
                   <i class="fas fa-circle"></i>
                 <% } %>
               </div>
-              <div class="timeline-content">
-                <h5 class="mb-1">
-                  <% if (stage.stageName === 'production') { %>
-                    <i class="fas fa-industry me-2"></i> Sản xuất
-                  <% } else if (stage.stageName === 'packaging') { %>
-                    <i class="fas fa-box me-2"></i> Đóng gói
-                  <% } else if (stage.stageName === 'qr_generated') { %>
-                    <i class="fas fa-qrcode me-2"></i> Tạo mã QR
-                  <% } else if (stage.stageName === 'distribution') { %>
-                    <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
-                  <% } else if (stage.stageName === 'pickup_confirmed') { %>
-                    <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
-                  <% } else if (stage.stageName === 'retail') { %>
-                    <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
-                  <% } else if (stage.stageName === 'ownership_transfer') { %>
-                    <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
-                  <% } else { %>
-                    <i class="fas fa-circle me-2"></i> <%= stage.stageName %>
-                  <% } %>
-                </h5>
-                
+              <div class="timeline-content card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <% if (stage.stageName === 'production') { %>
+                      <i class="fas fa-industry me-2"></i> Sản xuất
+                    <% } else if (stage.stageName === 'packaging') { %>
+                      <i class="fas fa-box me-2"></i> Đóng gói
+                    <% } else if (stage.stageName === 'qr_generated') { %>
+                      <i class="fas fa-qrcode me-2"></i> Tạo mã QR
+                    <% } else if (stage.stageName === 'distribution') { %>
+                      <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
+                    <% } else if (stage.stageName === 'pickup_confirmed') { %>
+                      <i class="fas fa-check-circle me-2"></i> Lấy hàng thành công
+                    <% } else if (stage.stageName === 'retail') { %>
+                      <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
+                    <% } else if (stage.stageName === 'sold') { %>
+                      <i class="fas fa-shopping-cart me-2"></i> Đã bán
+                    <% } else { %>
+                      <i class="fas fa-circle me-2"></i> <%= stage.stageName %>
+                    <% } %>
+                  </h5>
+                </div>
                 <!-- ... content của timeline ... -->
               </div>
             </div>
@@ -744,7 +754,7 @@
         <% } else if (item.stageName === 'distribution') { %>
           <i class="fas fa-truck"></i>
         <% } else if (item.stageName === 'pickup_confirmed') { %>
-          <i class="fas fa-check-circle"></i>
+          <i class="fas fa-check-circle"></i> Lấy hàng thành công
         <% } else if (item.stageName === 'retail') { %>
           <i class="fas fa-store"></i>
         <% } else if (item.stageName === 'sold') { %>
@@ -805,7 +815,7 @@
           <% } else if (stage.stageName === 'distribution') { %>
             <i class="fas fa-truck"></i>
           <% } else if (stage.stageName === 'pickup_confirmed') { %>
-            <i class="fas fa-check-circle"></i>
+            <i class="fas fa-check-circle"></i> Lấy hàng thành công
           <% } else if (stage.stageName === 'retail') { %>
             <i class="fas fa-store"></i>
           <% } else if (stage.stageName === 'sold') { %>

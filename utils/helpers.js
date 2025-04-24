@@ -47,6 +47,8 @@ function formatStageName(stageName) {
       return 'Đã bán';
     case 'ownership_transfer':
       return 'Chuyển quyền sở hữu';
+    case 'pickup_confirmed':
+      return 'Lấy hàng thành công';
     default:
       return stageName;
   }

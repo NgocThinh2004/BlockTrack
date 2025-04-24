@@ -95,14 +95,32 @@
               <tr>
                 <th>Trạng thái hiện tại</th>
                 <td>
-                  <span class="badge bg-<%= 
-                    product.currentStage === 'production' ? 'primary' : 
-                    product.currentStage === 'packaging' ? 'info' : 
-                    product.currentStage === 'distribution' ? 'warning' : 
-                    product.currentStage === 'retail' ? 'success' : 
-                    product.currentStage === 'sold' ? 'secondary' : 'dark' 
+                  <span class="badge <%= 
+                    product.currentStage === 'production' ? 'bg-primary' : 
+                    product.currentStage === 'packaging' ? 'bg-info' : 
+                    product.currentStage === 'qr_generated' ? 'bg-secondary' : 
+                    product.currentStage === 'distribution' ? 'bg-warning' : 
+                    product.currentStage === 'pickup_confirmed' ? 'bg-success' : 
+                    product.currentStage === 'retail' ? 'bg-success' : 
+                    product.currentStage === 'sold' ? 'bg-danger' : 'bg-secondary' 
                   %>">
-                    <%= product.currentStage %>
+                    <% if (product.currentStage === 'production') { %>
+                      <i class="fas fa-industry me-1"></i> Sản xuất
+                    <% } else if (product.currentStage === 'packaging') { %>
+                      <i class="fas fa-box me-1"></i> Đóng gói
+                    <% } else if (product.currentStage === 'qr_generated') { %>
+                      <i class="fas fa-qrcode me-1"></i> Tạo mã QR
+                    <% } else if (product.currentStage === 'distribution') { %>
+                      <i class="fas fa-truck me-1"></i> Đang phân phối
+                    <% } else if (product.currentStage === 'pickup_confirmed') { %>
+                      <i class="fas fa-check-circle me-1"></i> Lấy hàng thành công
+                    <% } else if (product.currentStage === 'retail') { %>
+                      <i class="fas fa-store me-1"></i> Đã đến nhà bán lẻ
+                    <% } else if (product.currentStage === 'sold') { %>
+                      <i class="fas fa-shopping-cart me-1"></i> Đã bán
+                    <% } else { %>
+                      <%= product.currentStage %>
+                    <% } %>
                   </span>
                 </td>
               </tr>
@@ -234,125 +252,80 @@
       
       <h5 class="mb-3">Hành trình sản phẩm</h5>
       
+      <!-- Chỉ giữ lại timeline thứ hai với thiết kế card-based -->
       <div class="product-journey mb-4">
-        <% 
-        // Định nghĩa các helper functions cho timeline
-        function _getStageIcon(stageName) {
-          switch (stageName) {
-            case 'production': return 'fas fa-cogs';
-            case 'packaging': return 'fas fa-box';
-            case 'qr_generated': return 'fas fa-qrcode';
-            case 'distribution': return 'fas fa-truck';
-            case 'retail': return 'fas fa-store';
-            case 'sold': return 'fas fa-shopping-cart';
-            case 'ownership_transfer': return 'fas fa-exchange-alt';
-            default: return 'fas fa-circle';
-          }
-        }
-
-        function _formatStageName(stageName) {
-          switch (stageName) {
-            case 'production': return 'Sản xuất';
-            case 'packaging': return 'Đóng gói';
-            case 'qr_generated': return 'Tạo mã QR';
-            case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
-            case 'retail': return 'Đến nhà bán lẻ';
-            case 'sold': return 'Đã bán';
-            case 'ownership_transfer': return 'Chuyển quyền sở hữu';
-            default: return stageName;
-          }
-        }
-
-        function _formatTimestamp(timestamp) {
-          if (!timestamp) return 'Không có thông tin';
-          
-          try {
-            if (typeof timestamp.toDate === 'function') {
-              return timestamp.toDate().toLocaleString('vi-VN');
-            } else if (timestamp instanceof Date) {
-              return timestamp.toLocaleString('vi-VN');
-            } else {
-              return new Date(timestamp).toLocaleString('vi-VN');
-            }
-          } catch (e) {
-            return 'Không có thông tin';
-          }
-        }
-
-        // Sử dụng helper functions được truyền từ controller nếu có, không thì dùng functions đã định nghĩa
-        var getStageIcon = typeof getStageIcon !== 'undefined' ? getStageIcon : _getStageIcon;
-        var formatStageName = typeof formatStageName !== 'undefined' ? formatStageName : _formatStageName;
-        var formatTimestamp = typeof formatTimestamp !== 'undefined' ? formatTimestamp : _formatTimestamp;
-        %>
-
         <div class="timeline">
           <% if (history && history.length > 0) { %>
-            <% history.forEach((item, index) => { %>
+            <% history.forEach(function(stage) { %>
               <div class="timeline-item">
-                <div class="timeline-dot <%= 
-                  item.stageName === 'production' ? 'bg-primary' : 
-                  item.stageName === 'packaging' ? 'bg-info' : 
-                  item.stageName === 'distribution' ? 'bg-warning' : 
-                  item.stageName === 'retail' ? 'bg-success' : 
-                  item.stageName === 'qr_generated' ? 'bg-info' :
-                  'bg-secondary' 
+                <div class="timeline-dot bg-<%= 
+                  stage.stageName === 'production' ? 'primary' : 
+                  stage.stageName === 'packaging' ? 'info' : 
+                  stage.stageName === 'qr_generated' ? 'secondary' : 
+                  stage.stageName === 'distribution' ? 'primary' : 
+                  stage.stageName === 'pickup_confirmed' ? 'success' : 
+                  stage.stageName === 'retail' ? 'warning' : 
+                  stage.stageName === 'sold' ? 'danger' : 'secondary' 
                 %>"></div>
-                <div class="timeline-content">
-                  <div class="d-flex justify-content-between mb-1">
-                    <h6 class="<%= index === 0 ? 'text-primary fw-bold' : '' %>">
-                      <% if (item.stageName === 'qr_generated') { %>
-                        <i class="fas fa-qrcode me-2"></i> Tạo mã QR
-                      <% } else if (item.stageName === 'distribution') { %>
-                        <i class="fas fa-truck me-2"></i> Chuyển đến đơn vị vận chuyển
-                      <% } else if (item.stageName === 'retail') { %>
-                        <i class="fas fa-store me-2"></i> Đã đến nhà bán lẻ
-                      <% } else if (item.stageName === 'ownership_transfer') { %>
-                        <i class="fas fa-exchange-alt me-2"></i> Chuyển quyền sở hữu
-                      <% } else { %>
-                        <%= item.stageName.charAt(0).toUpperCase() + item.stageName.slice(1) %>
-                      <% } %>
-                    </h6>
-                    <span class="text-muted small">
-                      <% 
-                        let stageTime = '';
-                        try {
-                          if (item.timestamp) {
-                            // Kiểm tra nếu là timestamp từ Firebase
-                            if (item.timestamp.toDate) {
-                              stageTime = item.timestamp.toDate().toLocaleString('vi-VN');
-                            } 
-                            // Kiểm tra nếu là Date hoặc chuỗi ISO
-                            else if (!isNaN(new Date(item.timestamp))) {
-                              stageTime = new Date(item.timestamp).toLocaleString('vi-VN');
-                            }
+                <div class="timeline-content card">
+                  <div class="card-header fw-bold d-flex align-items-center">
+                    <% if (stage.stageName === 'pickup_confirmed') { %>
+                      <span class="me-auto">Lấy hàng thành công</span>
+                    <% } else { %>
+                      <span class="me-auto">
+                        <% 
+                        function getStageName(stageName) {
+                          switch(stageName) {
+                            case 'production': return 'Sản xuất';
+                            case 'packaging': return 'Đóng gói';
+                            case 'qr_generated': return 'Tạo mã QR';
+                            case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
+                            case 'pickup_confirmed': return 'Lấy hàng thành công';
+                            case 'retail': return 'Đã đến nhà bán lẻ';
+                            case 'sold': return 'Đã bán';
+                            case 'ownership_transfer': return 'Chuyển quyền sở hữu';
+                            default: return stageName;
                           }
+                        }
                         %>
-                        <%= stageTime || 'Không có dữ liệu' %>
-                      <% } catch(e) { %>
-                        Không có dữ liệu
-                      <% } %>
-                    </span>
+                        <%= typeof helpers !== 'undefined' && typeof helpers.getStageName === 'function' ? helpers.getStageName(stage.stageName) : getStageName(stage.stageName) %>
+                      </span>
+                    <% } %>
+                    <small class="text-muted">
+                      <% 
+                      function formatTimestamp(timestamp) {
+                        if (!timestamp) return 'N/A';
+                        const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+                        return date.toLocaleString('vi-VN', {
+                          year: 'numeric', month: '2-digit', day: '2-digit',
+                          hour: '2-digit', minute: '2-digit'
+                        });
+                      }
+                      %>
+                      <%= typeof helpers !== 'undefined' && typeof helpers.formatTimestamp === 'function' ? helpers.formatTimestamp(stage.timestamp) : formatTimestamp(stage.timestamp) %>
+                    </small>
                   </div>
-                  <div class="timeline-event">
-                    <span class="timeline-event-icon"><i class="<%= getStageIcon(item.stageName) %>"></i></span>
-                    <div class="timeline-event-content">
-                      <h4 class="timeline-event-title"><%= formatStageName(item.stageName) %></h4>
-                      <p class="timeline-event-time"><i class="fas fa-clock me-1"></i> <%= formatTimestamp(item.timestamp) %></p>
+                  <div class="card-body">
+                    <% if (stage.stageName === 'distribution' && stage.details && stage.details.pickupLocation) { %>
+                      <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> Địa điểm lấy hàng: <%= stage.details.pickupLocation %></p>
                       
-                      <% if (item.stageName === 'distribution' && item.details && item.details.pickupLocation) { %>
-                        <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> Địa điểm lấy hàng: <%= item.details.pickupLocation %></p>
-                        
-                        <% if (item.details.receiverLocation && item.details.receiverLocation !== 'N/A') { %>
-                          <p class="timeline-event-location"><i class="fas fa-truck-loading me-1"></i> Địa điểm giao hàng: <%= item.details.receiverLocation %></p>
-                        <% } %>
+                      <% if (stage.details.receiverLocation && stage.details.receiverLocation !== 'N/A') { %>
+                        <p class="timeline-event-location"><i class="fas fa-truck-loading me-1"></i> Địa điểm giao hàng: <%= stage.details.receiverLocation %></p>
                       <% } %>
-                      <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= item.location %></p>
-                      <p class="timeline-event-description"><%= item.description %></p>
-                      
-                      <% if (item.stageName === 'distribution' && item.details && item.details.finalRecipientName) { %>
-                        <p class="timeline-event-detail"><i class="fas fa-user me-1"></i> Người nhận cuối: <%= item.details.finalRecipientName %></p>
-                      <% } %>
-                    </div>
+                    <% } else if (stage.stageName === 'pickup_confirmed') { %>
+                      <p class="timeline-event-description">Nhà phân phối đã lấy hàng thành công</p>
+                      <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
+                    <% } else { %>
+                      <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
+                    <% } %>
+                    
+                    <p class="timeline-event-description"><%= stage.description %></p>
+                    
+                    <% if (stage.stageName === 'distribution' && stage.details && stage.details.finalRecipientName) { %>
+                      <p class="text-muted mt-2">
+                        <i class="fas fa-user me-1"></i> Người nhận cuối: <%= stage.details.finalRecipientName %>
+                      </p>
+                    <% } %>
                   </div>
                 </div>
               </div>
@@ -376,113 +349,6 @@
     </div>
   </div>
 </div>
-
-<div class="product-status mb-3">
-  <h5 class="mb-2">Trạng thái hiện tại:</h5>
-  <span class="badge <%= 
-    product.currentStage === 'production' ? 'bg-primary' : 
-    product.currentStage === 'packaging' ? 'bg-info' : 
-    product.currentStage === 'qr_generated' ? 'bg-secondary' : 
-    product.currentStage === 'distribution' ? 'bg-primary' : 
-    product.currentStage === 'pickup_confirmed' ? 'bg-success' : 
-    product.currentStage === 'retail' ? 'bg-warning' : 
-    product.currentStage === 'sold' ? 'bg-danger' : 'bg-secondary' 
-  %> p-2">
-    <% if (product.currentStage === 'production') { %>
-      <i class="fas fa-industry me-1"></i> Sản xuất
-    <% } else if (product.currentStage === 'packaging') { %>
-      <i class="fas fa-box me-1"></i> Đóng gói
-    <% } else if (product.currentStage === 'qr_generated') { %>
-      <i class="fas fa-qrcode me-1"></i> Đã tạo mã QR
-    <% } else if (product.currentStage === 'distribution') { %>
-      <i class="fas fa-truck me-1"></i> Đang phân phối
-    <% } else if (product.currentStage === 'pickup_confirmed') { %>
-      <i class="fas fa-check-circle me-1"></i> Lấy hàng thành công
-    <% } else if (product.currentStage === 'retail') { %>
-      <i class="fas fa-store me-1"></i> Đã đến nhà bán lẻ
-    <% } else if (product.currentStage === 'sold') { %>
-      <i class="fas fa-shopping-cart me-1"></i> Đã bán
-    <% } else { %>
-      <%= typeof helpers !== 'undefined' && typeof helpers.getStageName === 'function' ? helpers.getStageName(product.currentStage) : product.currentStage %>
-    <% } %>
-  </span>
-</div>
-
-<% history.forEach(function(stage) { %>
-  <div class="timeline-item">
-    <div class="timeline-dot bg-<%= 
-      stage.stageName === 'production' ? 'primary' : 
-      stage.stageName === 'packaging' ? 'info' : 
-      stage.stageName === 'qr_generated' ? 'secondary' : 
-      stage.stageName === 'distribution' ? 'primary' : 
-      stage.stageName === 'pickup_confirmed' ? 'success' : 
-      stage.stageName === 'retail' ? 'warning' : 
-      stage.stageName === 'sold' ? 'danger' : 'secondary' 
-    %>"></div>
-    <div class="timeline-content card">
-      <div class="card-header fw-bold d-flex align-items-center">
-        <% if (stage.stageName === 'pickup_confirmed') { %>
-          <span class="me-auto">Lấy hàng thành công</span>
-        <% } else { %>
-          <span class="me-auto">
-            <% 
-            function getStageName(stageName) {
-              switch(stageName) {
-                case 'production': return 'Sản xuất';
-                case 'packaging': return 'Đóng gói';
-                case 'qr_generated': return 'Tạo mã QR';
-                case 'distribution': return 'Chuyển đến đơn vị vận chuyển';
-                case 'pickup_confirmed': return 'Lấy hàng thành công';
-                case 'retail': return 'Đã đến nhà bán lẻ';
-                case 'sold': return 'Đã bán';
-                case 'ownership_transfer': return 'Chuyển quyền sở hữu';
-                default: return stageName;
-              }
-            }
-            %>
-            <%= typeof helpers !== 'undefined' && typeof helpers.getStageName === 'function' ? helpers.getStageName(stage.stageName) : getStageName(stage.stageName) %>
-          </span>
-        <% } %>
-        <small class="text-muted">
-          <% 
-          function formatTimestamp(timestamp) {
-            if (!timestamp) return 'N/A';
-            const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-            return date.toLocaleString('vi-VN', {
-              year: 'numeric', month: '2-digit', day: '2-digit',
-              hour: '2-digit', minute: '2-digit'
-            });
-          }
-          %>
-          <%= typeof helpers !== 'undefined' && typeof helpers.formatTimestamp === 'function' ? helpers.formatTimestamp(stage.timestamp) : formatTimestamp(stage.timestamp) %>
-        </small>
-      </div>
-      <div class="card-body">
-        <!-- Kiểm tra chi tiết giai đoạn -->
-        <% if (stage.stageName === 'distribution' && stage.details && stage.details.pickupLocation) { %>
-          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> Địa điểm lấy hàng: <%= stage.details.pickupLocation %></p>
-          
-          <% if (stage.details.receiverLocation && stage.details.receiverLocation !== 'N/A') { %>
-            <p class="timeline-event-location"><i class="fas fa-truck-loading me-1"></i> Địa điểm giao hàng: <%= stage.details.receiverLocation %></p>
-          <% } %>
-        <% } else if (stage.stageName === 'pickup_confirmed') { %>
-          <p class="timeline-event-description">Nhà phân phối đã xác nhận lấy hàng thành công</p>
-          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
-        <% } else { %>
-          <p class="timeline-event-location"><i class="fas fa-map-marker-alt me-1"></i> <%= stage.location %></p>
-        <% } %>
-        
-        <p class="timeline-event-description"><%= stage.description %></p>
-        
-        <% if (stage.stageName === 'distribution' && stage.details && stage.details.finalRecipientName) { %>
-          <p class="text-muted mt-2">
-            <i class="fas fa-user me-1"></i> Người nhận cuối: <%= stage.details.finalRecipientName %>
-          </p>
-        <% } %>
-      </div>
-    </div>
-  </div>
-<% }); %>
 
 <style>
 .timeline {
