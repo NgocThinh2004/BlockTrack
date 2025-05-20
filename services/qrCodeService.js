@@ -21,7 +21,6 @@ class QRCodeService {
       if (!fs.existsSync(qrDir)) {
         fs.mkdirSync(qrDir, { recursive: true });
       }
-      console.log('QR directory initialized at:', qrDir);
     } catch (error) {
       console.error('Error creating QR directory:', error);
     }
@@ -45,9 +44,6 @@ class QRCodeService {
       const filePath = path.join(qrDir, fileName);
       const publicPath = `/qrcodes/${fileName}`;
       
-      console.log('Generating QR code for URL:', url);
-      console.log('QR code will be saved to:', filePath);
-      
       // Tạo QR code
       await QRCode.toFile(filePath, url, {
         errorCorrectionLevel: 'H',
@@ -59,7 +55,6 @@ class QRCodeService {
         }
       });
       
-      console.log('QR code successfully generated');
       return publicPath;
     } catch (error) {
       console.error('QR Code Generation Error:', error);

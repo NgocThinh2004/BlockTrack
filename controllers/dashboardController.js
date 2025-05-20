@@ -13,17 +13,14 @@ const Activity = require('../models/activityModel'); // Import Activity model
 exports.getProducerDashboard = async (req, res, next) => {
   try {
     const userId = req.session.userId;
-    console.log('[DASHBOARD] Producer dashboard requested by userId:', userId);
     
     if (!userId) {
-      console.log('[DASHBOARD] No userId in session, redirecting to login');
       return res.redirect('/auth/login');
     }
     
     const user = await User.getUserById(userId);
     
     if (!user || user.role !== 'producer') {
-      console.log('[DASHBOARD] Access denied: User is not a producer');
       return res.status(403).redirect('/auth/login');
     }
     
@@ -59,8 +56,6 @@ exports.getProducerDashboard = async (req, res, next) => {
       const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
       return dateB - dateA;
     });
-    
-    console.log(`[DASHBOARD] Found ${products.length} total products (${currentProducts.length} current, ${transferredProducts.length} transferred) for user ${userId}`);
     
     // Đếm số lượng sản phẩm theo giai đoạn - cập nhật cách tính
     const productsByStage = {
@@ -105,24 +100,20 @@ exports.getProducerDashboard = async (req, res, next) => {
                           productsByStage.packaging + 
                           productsByStage.qr_generated + 
                           productsByStage.distribution;
-    
-    console.log(`[DASHBOARD] Distribution products: ${productsByStage.distribution}`);
-    console.log(`[DASHBOARD] QR Generated products: ${productsByStage.qr_generated}`);
 
     // Lấy chính xác 5 hoạt động gần đây
     const activities = await Activity.getActivitiesByUser(userId, 5);
-    console.log(`[DASHBOARD] Loaded ${activities ? activities.length : 0} activities for dashboard`);
     
     res.render('dashboard/producer', { 
       user,
       products,
       productsByStage,
-      productsCount: productsCount, // Cập nhật cách tính tổng sản phẩm bao gồm cả QR
-      activities: activities || [], // Đảm bảo luôn có một mảng, tránh lỗi
+      productsCount: productsCount,
+      activities: activities || [],
       title: 'Nhà sản xuất Dashboard'
     });
   } catch (error) {
-    console.error('[DASHBOARD] Error in producer dashboard:', error);
+    console.error('Error in producer dashboard:', error);
     next(error);
   }
 };

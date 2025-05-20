@@ -15,7 +15,7 @@ Hệ thống truy xuất nguồn gốc sản phẩm giúp minh bạch hóa thôn
 
 - **Backend**: Node.js, Express.js
 - **Frontend**: EJS, Bootstrap 5, Font Awesome
-- **Database**: MongoDB, Firebase Firestore
+- **Database**: Firebase Firestore
 - **Blockchain**: Web3.js, Ethereum Smart Contracts
 - **Xác thực**: Express-session, bcrypt
 - **Khác**: QRCode

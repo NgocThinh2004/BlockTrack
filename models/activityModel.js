@@ -18,8 +18,6 @@ class Activity {
    */
   static async addActivity(activityData) {
     try {
-      console.log('Thêm hoạt động mới:', JSON.stringify(activityData));
-      
       // Validate required fields
       if (!activityData.userId) {
         console.error('Lỗi: Thiếu userId khi thêm hoạt động');
@@ -36,7 +34,6 @@ class Activity {
         const cachedTime = recentActivitiesCache.get(cacheKey);
         // Giảm thời gian kiểm tra trùng lặp xuống 2 giây
         if (now - cachedTime < 2000) {
-          console.log('Phát hiện hoạt động trùng lặp, bỏ qua:', cacheKey);
           return null;
         }
       }
@@ -68,16 +65,6 @@ class Activity {
       
       // Lưu vào cơ sở dữ liệu
       await activitiesCollection.doc(activityId).set(activity);
-      
-      console.log('Đã thêm hoạt động thành công với ID:', activityId);
-
-      // Thêm code debug để xác nhận hoạt động đã được thêm
-      const addedActivity = await activitiesCollection.doc(activityId).get();
-      if (addedActivity.exists) {
-        console.log('Xác nhận: Hoạt động đã được lưu trong database');
-      } else {
-        console.error('Lỗi: Hoạt động không được lưu trong database');
-      }
       
       return {
         ...activity,

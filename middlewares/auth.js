@@ -7,16 +7,10 @@ const User = require('../models/userModel');
  * Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
  */
 exports.isAuthenticated = (req, res, next) => {
-  console.log('isAuthenticated middleware called');
-  console.log('Session:', req.session);
-  console.log('User in session:', req.session?.user);
-  
   if (req.session && req.session.userId) {
-    console.log('User is authenticated, userId:', req.session.userId);
     return next();
   }
   
-  console.log('User is not authenticated, redirecting to login');
   res.redirect('/auth/login');
 };
 

@@ -22,31 +22,6 @@ app.use(cookieParser());
 const configureSession = require('./config/session');
 configureSession(app);
 
-// Add session debugging middleware
-app.use((req, res, next) => {
-  const originalRedirect = res.redirect;
-  res.redirect = function(url) {
-    console.log(`Redirecting to: ${url}`);
-    originalRedirect.call(this, url);
-  };
-  
-  console.log(`Session contains userId: ${!!req.session.userId}`);
-  console.log(`Session contains user: ${!!req.session.user}`);
-  
-  next();
-});
-
-// Add after session middleware
-app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Session data:`, {
-      userId: req.session.userId,
-      userRole: req.session.user?.role
-    });
-  }
-  next();
-});
-
 // View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -110,7 +85,7 @@ try {
   const trackRoutes = require('./routes/trackRoutes');
   const stageRoutes = require('./routes/stageRoutes');
   const qrRoutes = require('./routes/qrRoutes');
-  const activityRoutes = require('./routes/activityRoutes'); // Thêm dòng này
+  const activityRoutes = require('./routes/activityRoutes');
   const apiRoutes = require('./routes/apiRoutes');
   
   app.use('/', indexRoutes);
@@ -119,7 +94,7 @@ try {
   app.use('/track', trackRoutes);
   app.use('/stages', stageRoutes);
   app.use('/qr', qrRoutes);
-  app.use('/activity', activityRoutes); // Thêm dòng này
+  app.use('/activity', activityRoutes);
   app.use('/api', apiRoutes);
   
   // Optionally load other routes if they exist
