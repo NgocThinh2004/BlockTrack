@@ -18,12 +18,12 @@ const firebaseConfig = {
 try {
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    console.log('✅ Firebase initialized successfully with project:', firebaseConfig.projectId);
+    console.log('Firebase initialized successfully with project:', firebaseConfig.projectId);
   } else {
     console.log('Firebase already initialized');
   }
 } catch (error) {
-  console.error('❌ Firebase initialization error:', error.message);
+  console.error('Firebase initialization error:', error.message);
   console.error('Stack trace:', error.stack);
 }
 

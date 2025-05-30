@@ -4,100 +4,47 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Configuration for blockchain connection
+// Cấu hình kết nối blockchain
 let web3;
 let contract;
 
 /**
- * Initialize blockchain connection
- * - In development: Connect to local blockchain (Ganache)
- * - In production: Connect to specified provider
+ * Khởi tạo kết nối blockchain
+ * - Trong môi trường phát triển: Kết nối đến blockchain cục bộ (Ganache)
+ * - Trong môi trường sản xuất: Kết nối đến provider được chỉ định
  */
 function initBlockchain() {
   try {
-    // Default to local development blockchain if no provider is specified
+    // Mặc định kết nối đến blockchain phát triển cục bộ nếu không có provider nào được chỉ định
     const provider = process.env.BLOCKCHAIN_PROVIDER || 'http://localhost:7545';
     
-    // Create a new Web3 instance
+    // Tạo một instance Web3 mới
     web3 = new Web3(new Web3.providers.HttpProvider(provider));
     
-    console.log('Blockchain connection established to:', provider);
+    console.log('Đã thiết lập kết nối blockchain đến:', provider);
     
-    // Get the contract address from environment variables
+    // Lấy địa chỉ hợp đồng từ biến môi trường
     const contractAddress = process.env.CONTRACT_ADDRESS;
     
     if (!contractAddress) {
-      console.warn('CONTRACT_ADDRESS not set in environment variables. Using mock mode.');
-      return;
+      console.error('CONTRACT_ADDRESS không được cấu hình trong biến môi trường.');
+      throw new Error('Địa chỉ smart contract không được cấu hình');
     }
     
-    // Create a new contract instance
+    // Tạo một instance hợp đồng mới
     contract = new web3.eth.Contract(
       ProductTracker.abi,
       contractAddress
     );
     
-    console.log('Smart contract loaded at address:', contractAddress);
+    console.log('Đã tải smart contract tại địa chỉ:', contractAddress);
   } catch (error) {
-    console.error('Failed to initialize blockchain connection:', error);
-    // Create a mock Web3 instance to allow development without blockchain
-    console.log('Running in mock blockchain mode for development');
-    web3 = {
-      eth: {
-        getAccounts: async () => ['0x1234567890123456789012345678901234567890'],
-        Contract: function() {
-          return {
-            methods: {
-              addProduct: () => ({
-                send: async () => ({ 
-                  transactionHash: `mock_tx_${Date.now()}`,
-                  events: { 
-                    ProductAdded: { 
-                      returnValues: { productId: `mock_${Date.now()}` } 
-                    } 
-                  }
-                })
-              }),
-              addProductStage: () => ({
-                send: async () => ({ transactionHash: `mock_tx_${Date.now()}` })
-              }),
-              updateProduct: () => ({
-                send: async () => ({ transactionHash: `mock_tx_${Date.now()}` })
-              }),
-              transferOwnership: () => ({
-                send: async () => ({ transactionHash: `mock_tx_${Date.now()}` })
-              }),
-              getProduct: () => ({
-                call: async () => ({
-                  name: 'Mock Product',
-                  origin: 'Mock Origin',
-                  manufacturer: 'Mock Manufacturer',
-                  productionDate: Math.floor(Date.now() / 1000) - 86400,
-                  exists: true
-                })
-              }),
-              getProductHistoryCount: () => ({
-                call: async () => 3
-              }),
-              getProductHistoryItem: () => ({
-                call: async () => ({
-                  stageName: 'production',
-                  description: 'Mock stage description',
-                  location: 'Mock location',
-                  timestamp: Math.floor(Date.now() / 1000) - 86400,
-                  handler: 'Mock handler'
-                })
-              })
-            }
-          };
-        }
-      }
-    };
-    contract = new web3.eth.Contract();
+    console.error('Không thể khởi tạo kết nối blockchain:', error);
+    throw new Error('Không thể kết nối đến blockchain. Vui lòng kiểm tra cấu hình.');
   }
 }
 
-// Initialize blockchain on module load
+// Khởi tạo blockchain khi module được tải
 initBlockchain();
 
 module.exports = { web3, contract };

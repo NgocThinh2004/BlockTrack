@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
  * Controller xử lý xác thực người dùng
  */
 exports.getLogin = (req, res) => {
-  // Determine if we're pre-checking a role from query param 
+  // Xác định xem có cần kiểm tra vai trò từ query param không
   const roleFromQuery = req.query.role;
   const requireWallet = roleFromQuery && ['producer', 'distributor', 'retailer'].includes(roleFromQuery);
   
@@ -19,7 +19,7 @@ exports.getLogin = (req, res) => {
 };
 
 /**
- * Handle user login
+ * Xử lý đăng nhập người dùng
  */
 exports.postLogin = async (req, res) => {
   try {
@@ -35,7 +35,7 @@ exports.postLogin = async (req, res) => {
       });
     }
     
-    // Find user by email
+    // Tìm người dùng bằng email
     const user = await User.getUserByEmail(email);
     
     if (!user) {
@@ -47,7 +47,7 @@ exports.postLogin = async (req, res) => {
       });
     }
     
-    // Compare password - Fix: Ensure we're properly handling async bcrypt compare
+    // So sánh mật khẩu - Đảm bảo xử lý đúng cách khi so sánh bất đồng bộ với bcrypt
     let isMatch = false;
     try {
       isMatch = await bcrypt.compare(password, user.password);
@@ -64,10 +64,10 @@ exports.postLogin = async (req, res) => {
       });
     }
     
-    // Check if wallet is required based on role
+    // Kiểm tra xem ví có bắt buộc dựa trên vai trò không
     const requiresWallet = user.role === 'producer' || user.role === 'distributor' || user.role === 'retailer';
     
-    // If wallet is required and address was provided, verify it matches
+    // Nếu ví bắt buộc và đã cung cấp địa chỉ, xác minh xem có khớp không
     if (requiresWallet && user.walletAddress && walletAddress) {
       if (walletAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
         console.log(`Login failed: Wallet address mismatch for ${email}`);
@@ -85,7 +85,7 @@ exports.postLogin = async (req, res) => {
       console.log(`Wallet verification successful for ${email}`);
     }
     
-    // Login successful, store user in session
+    // Đăng nhập thành công, lưu thông tin người dùng vào session
     req.session.userId = user.id;
     req.session.user = {
       id: user.id,
@@ -97,7 +97,7 @@ exports.postLogin = async (req, res) => {
     
     console.log(`Login successful for ${email}`);
     
-    // Redirect directly without waiting for session save
+    // Chuyển hướng ngay lập tức không cần đợi lưu session
     if (user.role === 'producer') {
       return res.redirect('/dashboard/producer');
     } else if (user.role === 'distributor') {
@@ -117,13 +117,13 @@ exports.postLogin = async (req, res) => {
 };
 
 /**
- * Handle user registration
+ * Xử lý đăng ký người dùng
  */
 exports.postRegister = async (req, res) => {
   try {
     const { name, email, password, passwordConfirm, role, address, walletAddress } = req.body;
     
-    // Basic validation
+    // Kiểm tra cơ bản
     if (password !== passwordConfirm) {
       return res.status(400).render('auth/register', {
         title: 'Đăng ký tài khoản',
@@ -132,7 +132,7 @@ exports.postRegister = async (req, res) => {
       });
     }
     
-    // Check if email exists
+    // Kiểm tra email đã tồn tại chưa
     const emailExists = await User.emailExists(email);
     if (emailExists) {
       console.log(`Registration failed: Email ${email} already exists`);
@@ -143,7 +143,7 @@ exports.postRegister = async (req, res) => {
       });
     }
     
-    // Check if wallet exists if provided
+    // Kiểm tra ví đã tồn tại chưa (nếu được cung cấp)
     if (walletAddress) {
       const walletExists = await User.walletExists(walletAddress);
       if (walletExists) {
@@ -156,18 +156,18 @@ exports.postRegister = async (req, res) => {
       }
     }
     
-    // Create new user
+    // Tạo người dùng mới
     const newUser = await User.createUser({
       name, email, password, role, address, walletAddress
     });
     
-    // Store registration info in session
+    // Lưu thông tin đăng ký vào session
     req.session.registerSuccess = true;
     req.session.registeredName = newUser.name;
     req.session.registeredEmail = newUser.email;
     req.session.registeredRole = newUser.role;
     
-    // Redirect to login
+    // Chuyển hướng đến trang đăng nhập
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Register error:', error);
@@ -180,16 +180,16 @@ exports.postRegister = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  // Set a flag in the response cookie to indicate wallet should disconnect
+  // Đặt một cờ trong cookie phản hồi để chỉ ra rằng ví nên ngắt kết nối
   res.cookie('wallet_disconnected', 'true', { 
-    maxAge: 5000, // Short-lived cookie, just for the redirect
-    httpOnly: false // Make it accessible to client-side JS
+    maxAge: 5000, // Cookie tồn tại ngắn, chỉ để chuyển hướng
+    httpOnly: false // Làm cho nó có thể truy cập bởi JS phía client
   });
   
-  // Store last user email in a separate cookie to detect user changes
+  // Lưu email người dùng cuối cùng vào cookie riêng để phát hiện thay đổi người dùng
   if (req.session.user && req.session.user.email) {
     res.cookie('last_user', req.session.user.email, {
-      maxAge: 86400000, // 24 hours
+      maxAge: 86400000, // 24 giờ
       httpOnly: false
     });
   }
@@ -265,7 +265,7 @@ exports.changePassword = async (req, res) => {
     const userId = req.session.userId;
     const { currentPassword, newPassword, confirmPassword } = req.body;
     
-    // Get user data
+    // Lấy dữ liệu người dùng
     const user = await User.getUserById(userId);
     
     if (!user) {

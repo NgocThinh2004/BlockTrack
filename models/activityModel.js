@@ -184,47 +184,6 @@ class Activity {
     }
   }
   
-  /**
-   * Force thêm hoạt động để test
-   * @returns {Promise<boolean>} - Success status
-   */
-  static async addTestActivity(userId) {
-    try {
-      const result = await this.addActivity({
-        userId: userId,
-        type: 'test_activity',
-        entityId: 'test',
-        entityName: 'Test Activity',
-        entityType: 'test',
-        description: 'Hoạt động test được tạo lúc ' + new Date().toLocaleString('vi-VN')
-      });
-      
-      return !!result;
-    } catch (error) {
-      console.error('Lỗi khi thêm hoạt động test:', error);
-      return false;
-    }
-  }
-  
-  /**
-   * Lấy tất cả hoạt động để debug
-   */
-  static async getAllActivities(limit = 20) {
-    try {
-      const snapshot = await activitiesCollection.limit(limit).get();
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          timestamp: data.timestamp ? data.timestamp.toDate() : null
-        };
-      });
-    } catch (error) {
-      console.error('Lỗi khi lấy tất cả hoạt động:', error);
-      return [];
-    }
-  }
 }
 
 module.exports = Activity;

@@ -34,32 +34,3 @@ exports.debugActivities = async (req, res) => {
     });
   }
 };
-
-/**
- * Thêm hoạt động test
- */
-exports.addTestActivity = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Bạn chưa đăng nhập'
-      });
-    }
-    
-    const success = await Activity.addTestActivity(userId);
-    
-    res.json({
-      success: success,
-      message: success ? 'Đã thêm hoạt động test thành công' : 'Lỗi khi thêm hoạt động test'
-    });
-  } catch (error) {
-    console.error('Lỗi khi thêm hoạt động test:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};

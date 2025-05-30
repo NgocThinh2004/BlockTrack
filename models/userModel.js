@@ -1,9 +1,9 @@
-const firebase = require('../config/firebase');  // Use configured Firebase instance
+const firebase = require('../config/firebase');  // Sử dụng instance Firebase đã được cấu hình
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * User model for authentication and profile management
+ * Mô hình User quản lý xác thực và thông tin người dùng
  */
 class User {
   constructor(data) {
@@ -19,21 +19,21 @@ class User {
   }
 
   /**
-   * Create a new user
-   * @param {Object} userData - User information
-   * @returns {Object} - Created user data
+   * Tạo người dùng mới
+   * @param {Object} userData - Thông tin người dùng
+   * @returns {Object} - Dữ liệu người dùng đã tạo
    */
   static async createUser(userData) {
     try {
-      // Hash password
+      // Mã hóa mật khẩu
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
       
-      // Normalize wallet address if provided
+      // Chuẩn hóa địa chỉ ví nếu được cung cấp
       const walletAddress = userData.walletAddress ? 
         userData.walletAddress.toLowerCase() : '';
       
-      // Create user object
+      // Tạo đối tượng người dùng
       const user = {
         id: uuidv4(),
         name: userData.name,
@@ -46,25 +46,25 @@ class User {
         updatedAt: new Date().toISOString()
       };
       
-      // Save to Firestore
+      // Lưu vào Firestore
       await firebase.firestore()
         .collection('users')
         .doc(user.id)
         .set(user);
       
-      // Remove password from returned user
+      // Loại bỏ mật khẩu khi trả về người dùng
       const { password, ...userWithoutPassword } = user;
       return userWithoutPassword;
     } catch (error) {
-      console.error('Create user error:', error);
+      console.error('Lỗi tạo người dùng:', error);
       throw error;
     }
   }
 
   /**
-   * Get user by ID
-   * @param {string} id - User ID
-   * @returns {Object|null} - User data or null if not found
+   * Lấy thông tin người dùng theo ID
+   * @param {string} id - ID người dùng
+   * @returns {Object|null} - Dữ liệu người dùng hoặc null nếu không tìm thấy
    */
   static async getUserById(id) {
     try {
@@ -84,11 +84,11 @@ class User {
         ...doc.data()
       });
     } catch (error) {
-      console.error('Error getting user by ID:', error);
+      console.error('Lỗi khi lấy người dùng theo ID:', error);
       
       // Xử lý lỗi quyền truy cập cho getUserById
       if (error.code === 'permission-denied') {
-        console.log('Permission denied when getting user by ID, trying demo user...');
+        console.log('Quyền truy cập bị từ chối khi lấy người dùng theo ID, thử dùng người dùng demo...');
         // Kiểm tra từ ID
         if (id.includes('producer')) return this.getDemoUser('producer');
         if (id.includes('distributor')) return this.getDemoUser('distributor');
@@ -100,15 +100,15 @@ class User {
   }
 
   /**
-   * Get user by email
-   * @param {string} email - User email
-   * @returns {Object|null} - User data or null if not found
+   * Lấy thông tin người dùng theo email
+   * @param {string} email - Email người dùng
+   * @returns {Object|null} - Dữ liệu người dùng hoặc null nếu không tìm thấy
    */
   static async getUserByEmail(email) {
     try {
       if (!email) return null;
       
-      console.log(`Looking up user by email: ${email}`);
+      console.log(`Tìm kiếm người dùng theo email: ${email}`);
       
       const snapshot = await firebase.firestore()
         .collection('users')
@@ -116,11 +116,11 @@ class User {
         .get();
       
       if (snapshot.empty) {
-        console.log('User not found by email');
+        console.log('Không tìm thấy người dùng theo email');
         return null;
       }
       
-      console.log('User found by email');
+      console.log('Tìm thấy người dùng theo email');
       const userData = snapshot.docs[0].data();
       
       return new User({
@@ -128,11 +128,11 @@ class User {
         ...userData
       });
     } catch (error) {
-      console.error('Error getting user by email:', error);
+      console.error('Lỗi khi lấy người dùng theo email:', error);
       
       // Cải thiện xử lý lỗi quyền truy cập
       if (error.code === 'permission-denied') {
-        console.log('Permission denied when getting user by email, using alternative authentication...');
+        console.log('Quyền truy cập bị từ chối khi lấy người dùng theo email, sử dụng xác thực thay thế...');
         
         // Mở rộng danh sách người dùng đã biết
         const knownUsers = {
@@ -155,7 +155,7 @@ class User {
   }
   
   /**
-   * Get demo user for development
+   * Lấy người dùng demo cho môi trường phát triển
    */
   static getDemoUser(role) {
     return new User({
@@ -171,15 +171,15 @@ class User {
   }
 
   /**
-   * Get user by wallet address
-   * @param {string} walletAddress - Blockchain wallet address
-   * @returns {Object|null} - User data or null
+   * Lấy thông tin người dùng theo địa chỉ ví
+   * @param {string} walletAddress - Địa chỉ ví blockchain
+   * @returns {Object|null} - Dữ liệu người dùng hoặc null
    */
   static async getUserByWalletAddress(walletAddress) {
     try {
       if (!walletAddress) return null;
       
-      // Always normalize wallet addresses for comparison
+      // Luôn chuẩn hóa địa chỉ ví để so sánh
       const normalizedWalletAddress = walletAddress.toLowerCase();
       
       const snapshot = await firebase.firestore()
@@ -196,11 +196,11 @@ class User {
         ...snapshot.docs[0].data()
       });
     } catch (error) {
-      console.error('Error getting user by wallet address:', error);
+      console.error('Lỗi khi lấy người dùng theo địa chỉ ví:', error);
       
       // Xử lý lỗi quyền truy cập cho wallet
       if (error.code === 'permission-denied') {
-        console.log('Permission denied when getting user by wallet, trying fallback...');
+        console.log('Quyền truy cập bị từ chối khi lấy người dùng theo ví, thử phương pháp dự phòng...');
         // Kiểm tra ví có phải ví demo không
         if (walletAddress && walletAddress.toLowerCase() === '0x1234567890123456789012345678901234567890') {
           return this.getDemoUser('producer');
@@ -216,9 +216,9 @@ class User {
   }
 
   /**
-   * Check if email is already registered
-   * @param {string} email - Email to check
-   * @returns {boolean} - True if email exists
+   * Kiểm tra email đã được đăng ký chưa
+   * @param {string} email - Email cần kiểm tra
+   * @returns {boolean} - True nếu email đã tồn tại
    */
   static async emailExists(email) {
     if (!email) return false;
@@ -231,21 +231,21 @@ class User {
       
       return !snapshot.empty;
     } catch (error) {
-      console.error('Email exists check error:', error);
-      throw error; // Throw the error instead of failing silently
+      console.error('Lỗi kiểm tra email tồn tại:', error);
+      throw error; // Ném lỗi thay vì thất bại trong im lặng
     }
   }
 
   /**
-   * Check if wallet address is already registered
-   * @param {string} walletAddress - Wallet address to check
-   * @returns {boolean} - True if wallet exists
+   * Kiểm tra địa chỉ ví đã được đăng ký chưa
+   * @param {string} walletAddress - Địa chỉ ví cần kiểm tra
+   * @returns {boolean} - True nếu ví đã tồn tại
    */
   static async walletExists(walletAddress) {
     if (!walletAddress) return false;
     
     try {
-      // Always normalize wallet addresses for comparison 
+      // Luôn chuẩn hóa địa chỉ ví để so sánh 
       const normalizedWalletAddress = walletAddress.toLowerCase();
       
       const snapshot = await firebase.firestore()
@@ -255,23 +255,23 @@ class User {
       
       return !snapshot.empty;
     } catch (error) {
-      console.error('Wallet exists check error:', error);
-      throw error; // Throw the error instead of failing silently
+      console.error('Lỗi kiểm tra ví tồn tại:', error);
+      throw error; // Ném lỗi thay vì thất bại trong im lặng
     }
   }
 
   /**
-   * Update user information
-   * @param {string} userId - User ID
-   * @param {Object} updateData - Data to update
-   * @returns {Promise<boolean>} - Success status
+   * Cập nhật thông tin người dùng
+   * @param {string} userId - ID người dùng
+   * @param {Object} updateData - Dữ liệu cần cập nhật
+   * @returns {Promise<boolean>} - Trạng thái thành công
    */
   static async updateUser(userId, updateData) {
     try {
-      // Don't allow updating certain fields directly
+      // Không cho phép cập nhật một số trường trực tiếp
       const { id, email, password, role, createdAt, ...allowedUpdates } = updateData;
       
-      // Add update timestamp
+      // Thêm thời gian cập nhật
       allowedUpdates.updatedAt = new Date().toISOString();
       
       await firebase.firestore()
@@ -281,24 +281,24 @@ class User {
       
       return true;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Lỗi cập nhật người dùng:', error);
       throw error;
     }
   }
 
   /**
-   * Update user password
-   * @param {string} userId - User ID
-   * @param {string} newPassword - New password
-   * @returns {Promise<boolean>} - Success status
+   * Cập nhật mật khẩu người dùng
+   * @param {string} userId - ID người dùng
+   * @param {string} newPassword - Mật khẩu mới
+   * @returns {Promise<boolean>} - Trạng thái thành công
    */
   static async updatePassword(userId, newPassword) {
     try {
-      // Hash new password
+      // Mã hóa mật khẩu mới
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
       
-      // Update password in database
+      // Cập nhật mật khẩu trong cơ sở dữ liệu
       await firebase.firestore()
         .collection('users')
         .doc(userId)
@@ -309,15 +309,15 @@ class User {
       
       return true;
     } catch (error) {
-      console.error('Error updating password:', error);
+      console.error('Lỗi cập nhật mật khẩu:', error);
       throw error;
     }
   }
 
   /**
-   * Get users by role
-   * @param {string} role - User role
-   * @returns {Array} - List of users
+   * Lấy danh sách người dùng theo vai trò
+   * @param {string} role - Vai trò người dùng
+   * @returns {Array} - Danh sách người dùng
    */
   static async getUsersByRole(role) {
     try {
@@ -332,7 +332,7 @@ class User {
       
       return snapshot.docs.map(doc => new User(doc.data()));
     } catch (error) {
-      console.error('Get users by role error:', error);
+      console.error('Lỗi lấy người dùng theo vai trò:', error);
       return [];
     }
   }

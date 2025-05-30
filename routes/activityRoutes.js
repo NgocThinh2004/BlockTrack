@@ -10,6 +10,6 @@ router.use(isAuthenticated);
 router.get('/debug', activityController.debugActivities);
 
 // Thêm hoạt động test
-router.post('/test-activity', activityController.addTestActivity);
+//router.post('/test-activity', activityController.addTestActivity);
 
 module.exports = router;

@@ -33,8 +33,8 @@ const viewVariables = require('./middlewares/viewVariables');
 app.use(viewVariables);
 
 // Thêm middleware biến mặc định
-const defaultVariables = require('./middlewares/defaultVariables');
-app.use(defaultVariables);
+// const defaultVariables = require('./middlewares/defaultVariables');
+// app.use(defaultVariables);
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
