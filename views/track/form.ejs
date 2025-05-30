@@ -120,15 +120,32 @@
         html5QrCode = new Html5Qrcode("qr-reader-container");
       }
       
-      const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-        console.log(`QR Code detected: ${decodedText}`);
-        html5QrCode.stop().then(() => {
-          qrReaderDiv.classList.add('d-none');
-          window.location.href = `/track/${decodedText}`;
-        }).catch((err) => {
-          console.log("Error stopping camera:", err);
-        });
-      };
+    const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+      console.log(`QR Code detected: ${decodedText}`);
+      html5QrCode.stop().then(() => {
+        qrReaderDiv.classList.add('d-none');
+
+        const base = window.location.origin; // http://localhost:3000
+
+        if (decodedText.startsWith('http')) {
+          // Nếu là URL đầy đủ, chuyển hướng trực tiếp
+          window.location.href = decodedText;
+        } 
+        else if (decodedText.includes('/track/')) {
+          // Nếu là URL nội bộ có /track/, tách ra ID
+          const parts = decodedText.split('/track/');
+          const productId = parts[parts.length - 1];
+          window.location.href = `${base}/track/${productId}`;
+        } 
+        else {
+          // Nếu là ID đơn, gắn vào đường dẫn track
+          window.location.href = `${base}/track/${decodedText}`;
+        }
+    }).catch((err) => {
+      console.log("Error stopping camera:", err);
+    });
+  };
+
       
       const config = { fps: 10, qrbox: { width: 250, height: 250 } };
       

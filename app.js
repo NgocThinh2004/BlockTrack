@@ -76,7 +76,6 @@ app.use((req, res, next) => {
   res.locals.originalUrl = req.originalUrl;
   next();
 });
-
 // Routes
 try {
   const indexRoutes = require('./routes/index');
@@ -131,5 +130,7 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
+
+
 
 module.exports = app;

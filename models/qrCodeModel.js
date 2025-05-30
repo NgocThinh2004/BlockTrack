@@ -18,7 +18,8 @@ class QRCode {
       const qrId = uuidv4();
       
       // Tạo URL cho sản phẩm - URL này sẽ được mã hóa thành QR code
-      const productUrl = `/track/${productId}`;
+      const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+      const productUrl = `${baseUrl}/track/${productId}`;
       
       console.log('Creating QR code for product:', productId);
       console.log('Product URL for QR:', productUrl);
