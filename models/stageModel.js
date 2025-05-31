@@ -32,6 +32,21 @@ class ProductStage {
         blockchainTxId: null,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       };
+      try {
+        // Get product data once
+        const product = await Product.getProductById(stageData.productId);
+        
+        if (product && product.blockchainId && product.blockchainId !== 'Đang xử lý') {
+          
+          // Thêm blockchainId vào đối tượng stage truyền cho blockchain service
+          const blockchainResult = await blockchainService.addStage({
+            ...stage,
+            blockchainId: product.blockchainId // Thêm blockchainId vào đây
+          });
+        }
+      } catch (error) {
+        console.error('Error processing blockchain ID:', error);
+      }
       
       // Record stage on blockchain
       try {

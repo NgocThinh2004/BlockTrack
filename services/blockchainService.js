@@ -140,9 +140,6 @@ class BlockchainService {
       };
     } catch (error) {
       console.error('Blockchain Error (updateProduct):', error);
-      return {
-        transactionHash: `mock_tx_${Date.now()}`
-      };
     }
   }
 
@@ -157,8 +154,10 @@ class BlockchainService {
       const defaultAccount = accounts[0];
       
       // Lấy sản phẩm từ blockchain
-      const product = await this.getProductById(stage.productId);
-      
+      const product = await this.getProductById(stage.blockchainId);
+      if(!product){
+        throw new Error(`Không tìm thấy sản phẩm với ID ${stage.productId}`);
+      }
       // Xử lý đặc biệt cho giai đoạn tạo QR
       const stageName = stage.stageName === 'qr_generated' ? 'QR Code Created' : stage.stageName;
       
@@ -178,9 +177,7 @@ class BlockchainService {
       };
     } catch (error) {
       console.error('Blockchain Error (addStage):', error);
-      return {
-        transactionHash: `mock_tx_${Date.now()}`
-      };
+      throw new Error(`Blockchain transaction failed: ${error.message}`);
     }
   }
 
@@ -230,9 +227,7 @@ class BlockchainService {
       // Trong môi trường phát triển, cho phép dùng dữ liệu giả
       if (process.env.NODE_ENV !== 'production' || process.env.MOCK_BLOCKCHAIN === 'true') {
         console.warn('Using mock blockchain transaction for development');
-        return {
-          transactionHash: `mock_transfer_tx_${Date.now()}`
-        };
+
       }
       
       throw error; // Ném lại lỗi để xử lý ở tầng cao hơn
@@ -246,20 +241,31 @@ class BlockchainService {
    */
   async getProductById(productId) {
     try {
-      // Trong môi trường thực tế, sẽ truy vấn từ blockchain
-      // Tạm thời trả về dữ liệu giả
+      // Kiểm tra kết nối blockchain
+      if (!web3 || !contract) {
+        throw new Error('Blockchain connection not available');
+      }
+      const productData = await contract.methods.getProduct(productId).call();
+      // Kiểm tra xem sản phẩm có tồn tại không
+      if(!productData || !productData.exists) {
+        console.warn(`Product with ID ${productId} does not exist on blockchain`);
+        return null;
+      }
+      // Chuyển đổi dữ liệu từ contract về dạng đối tượng
       return {
         blockchainId: productId,
-        name: "Sample Product",
-        origin: "Sample Origin",
-        manufacturer: "Sample Manufacturer"
+        name: productData.name,
+        origin: productData.origin,
+        manufacturer: productData.manufacturer,
+        productionDate: new Date(productData.productionDate * 1000),
+        batchNumber: productData.batchNumber,
+        ownerId: productData.ownerId
       };
-    } catch (error) {
+    }catch (error) {
       console.error('Blockchain Error (getProductById):', error);
       return null;
     }
   }
-
   /**
    * Lấy lịch sử sản phẩm từ blockchain
    * @param {String} productId - ID sản phẩm trên blockchain
@@ -267,30 +273,29 @@ class BlockchainService {
    */
   async getProductHistory(productId) {
     try {
-      // Trong môi trường thực tế, sẽ truy vấn từ blockchain
-      // Tạm thời trả về dữ liệu giả
-      const mockHistory = [
-        {
-          stageName: "Sản xuất",
-          timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          location: "Nhà máy A",
-          handledBy: "0x123..."
-        },
-        {
-          stageName: "Đóng gói",
-          timestamp: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
-          location: "Nhà máy A",
-          handledBy: "0x123..."
-        },
-        {
-          stageName: "Vận chuyển",
-          timestamp: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-          location: "Kho B",
-          handledBy: "0x456..."
-        }
-      ];
+      // Kiểm tra kết nối blockchain
+      if (!web3 || !contract) {
+        throw new Error('Blockchain connection not available');
+      }
       
-      return mockHistory;
+      // Lấy số lượng giai đoạn của sản phẩm
+      const historyCount = await contract.methods.getProductHistoryCount(productId).call();
+      const history = [];
+      
+      // Lấy chi tiết từng giai đoạn
+      for (let i = 0; i < parseInt(historyCount); i++) {
+        const stage = await contract.methods.getProductHistoryItem(productId, i).call();
+        
+        history.push({
+          stageName: stage.stageName,
+          description: stage.description,
+          location: stage.location,
+          timestamp: new Date(parseInt(stage.timestamp) * 1000),
+          handledBy: stage.handler
+        });
+      }
+      
+      return history;
     } catch (error) {
       console.error('Blockchain Error (getProductHistory):', error);
       return [];
@@ -304,12 +309,23 @@ class BlockchainService {
    */
   async getProductHash(blockchainId) {
     try {
-      // Trong môi trường thực tế, sẽ truy vấn hash từ blockchain
-      console.log(`Getting hash for product ${blockchainId} from blockchain`);
+      // Lấy dữ liệu sản phẩm từ blockchain
+      const productData = await this.getProductById(blockchainId);
+      if (!productData) return null;
       
-      // Tạm thời trả về null để sử dụng hash từ database
-      // Trong triển khai thực tế, đây sẽ là một gọi API tới blockchain
-      return null;
+      // Tạo chuỗi JSON đã sắp xếp để tính hash nhất quán
+      const dataToHash = {
+        name: productData.name,
+        manufacturer: productData.manufacturer,
+        origin: productData.origin,
+        description: productData.description || '',
+        batchNumber: productData.batchNumber || '',
+        productionDate: new Date(productData.productionDate).toISOString().split('T')[0]
+      };
+      
+      // Tính hash từ dữ liệu
+      const dataString = JSON.stringify(dataToHash, Object.keys(dataToHash).sort());
+      return web3.utils.sha3(dataString);
     } catch (error) {
       console.error('Blockchain Error (getProductHash):', error);
       return null;
